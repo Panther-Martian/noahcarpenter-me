@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noah</title>
+<meta name="description" content="Noah Carpenter — personal site and projects.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF7F0;
+  --dots:#EDE6D6;
+  --ink:#2B1B5A;
+  --muted:#6A5C90;
+  --card:#FFFFFF;
+  --accent:#E24A72;
+  --line:#2B1B5A;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1B1436;
+    --dots:#241A48;
+    --ink:#F2ECFF;
+    --muted:#A79BD0;
+    --card:#241A48;
+    --accent:#FF7EA5;
+    --line:#4B3A86;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1B1436;
+  --dots:#241A48;
+  --ink:#F2ECFF;
+  --muted:#A79BD0;
+  --card:#241A48;
+  --accent:#FF7EA5;
+  --line:#4B3A86;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"Fredoka","Trebuchet MS",sans-serif;
+  background-color:var(--bg);
+  background-image:radial-gradient(var(--dots) 1.5px, transparent 1.6px);
+  background-size:22px 22px;
+  min-height:100vh;
+  line-height:1.6;
+}
+
+.wrap{max-width:720px;margin:0 auto;padding:72px 16px 96px}
+
+header{margin-bottom:56px}
+
+h1{
+  font-family:"Bungee","Impact",sans-serif;
+  font-weight:400;
+  margin:0;
+  line-height:1;
+  font-size:clamp(3rem,12vw,5rem);
+  color:var(--accent);
+  text-shadow:2px 2px 0 var(--line);
+  transform:rotate(-1.5deg);
+  transform-origin:left center;
+}
+
+.tagline{
+  margin:20px 0 0;
+  font-size:1.05rem;
+  color:var(--muted);
+  max-width:46ch;
+}
+
+h2{
+  font-family:"Bungee","Impact",sans-serif;
+  font-weight:400;
+  font-size:1rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 18px;
+}
+
+.projects{display:grid;gap:14px;margin:0;padding:0;list-style:none}
+
+.project{
+  display:block;
+  background:var(--card);
+  border:2px solid var(--line);
+  border-radius:14px;
+  box-shadow:4px 4px 0 var(--line);
+  padding:18px 20px;
+  text-decoration:none;
+  color:inherit;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.project:hover,
+.project:focus-visible{
+  transform:translate(-2px,-2px);
+  box-shadow:6px 6px 0 var(--accent);
+  outline:none;
+}
+.project h3{
+  margin:0;
+  font-family:"Bungee","Impact",sans-serif;
+  font-weight:400;
+  font-size:1.15rem;
+}
+.project p{margin:6px 0 0;color:var(--muted);font-size:.95rem}
+
+.empty{
+  border:2px dashed var(--line);
+  border-radius:14px;
+  padding:26px 20px;
+  color:var(--muted);
+  text-align:center;
+  font-size:.95rem;
+}
+
+footer{
+  margin-top:64px;
+  padding-top:24px;
+  border-top:2px solid var(--line);
+  display:flex;
+  flex-wrap:wrap;
+  gap:18px;
+}
+footer a{
+  color:var(--ink);
+  font-weight:500;
+  text-decoration:none;
+  border-bottom:2px solid var(--accent);
+  padding-bottom:1px;
+}
+footer a:hover,
+footer a:focus-visible{color:var(--accent);outline:none}
+
+@media (max-width:520px){
+  .wrap{padding:48px 16px 72px}
+  header{margin-bottom:40px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Noah</h1>
+    <p class="tagline">I build small things for the web. Most of them start as an argument about who&rsquo;s right.</p>
+  </header>
+
+  <main>
+    <h2>Projects</h2>
+    <ul class="projects">
+      <li>
+        <a class="project" href="state-slam.html">
+          <h3>State Slam</h3>
+          <p>Two ways to prove you know your 50 states. Map or list, timed, hand it over and see who wins.</p>
+        </a>
+      </li>
+    </ul>
+    <p class="empty" style="margin-top:14px">More on the way.</p>
+  </main>
+
+  <footer>
+    <a href="mailto:noahcarpenter62@gmail.com">Email</a>
+  </footer>
+
+</div>
+</body>
+</html>
