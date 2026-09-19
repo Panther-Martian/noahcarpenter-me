@@ -18,8 +18,7 @@
   --accent:#A8752F;
   --accent-ink:#8A6224;
   --line:#28313B;
-  --sticker:#FFFFFF;
-  --ring:3px;
+  --sticker:transparent;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -32,7 +31,6 @@
     --accent-ink:#E8BE7A;
     --line:#3A4854;
     --sticker:#E8EDF2;
-    --ring:3px;
   }
 }
 :root[data-theme="dark"]{
@@ -45,7 +43,6 @@
   --accent-ink:#E8BE7A;
   --line:#3A4854;
   --sticker:#E8EDF2;
-  --ring:3px;
 }
 
 *{box-sizing:border-box}
@@ -80,18 +77,12 @@ h1{
   margin:0 auto 18px;
   width:min(360px,100%);
   height:auto;
-  /* die-cut sticker edge: 8 directions for an even ring, then a cast
-     shadow to lift it off the page. --ring tunes the thickness. */
+  /* die-cut outline so the black hoodie stays readable on the dark ground */
   filter:
-    drop-shadow(var(--ring) 0 0 var(--sticker))
-    drop-shadow(calc(var(--ring) * -1) 0 0 var(--sticker))
-    drop-shadow(0 var(--ring) 0 var(--sticker))
-    drop-shadow(0 calc(var(--ring) * -1) 0 var(--sticker))
-    drop-shadow(calc(var(--ring) * .72) calc(var(--ring) * .72) 0 var(--sticker))
-    drop-shadow(calc(var(--ring) * -.72) calc(var(--ring) * .72) 0 var(--sticker))
-    drop-shadow(calc(var(--ring) * .72) calc(var(--ring) * -.72) 0 var(--sticker))
-    drop-shadow(calc(var(--ring) * -.72) calc(var(--ring) * -.72) 0 var(--sticker))
-    drop-shadow(0 4px 3px rgba(0,0,0,.22));
+    drop-shadow(1.5px 0 0 var(--sticker))
+    drop-shadow(-1.5px 0 0 var(--sticker))
+    drop-shadow(0 1.5px 0 var(--sticker))
+    drop-shadow(0 -1.5px 0 var(--sticker));
 }
 
 h2{
