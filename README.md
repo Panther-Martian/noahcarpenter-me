@@ -24,6 +24,7 @@ convention does **not** apply here; routes are wired explicitly in
   - `collection-organizer.html` — MTG Card Organizer, "Analyze List" tab (the entry point)
   - `stack-organizer.html` — MTG Card Organizer, "Combine Multiple Lists" tab
   - `cardkingdom-tool.html` — MTG Card Organizer, "CardKingdom Tool" tab
+  - `skull-cards.webp` — footer art on the three organizer tabs
   - `game.css` — shared styling for both games
   - `game.js` — shared helpers, the name gate, the leaderboard client
   - `states.js` — state names + SVG paths (State Slam only, ~107KB)
@@ -90,10 +91,16 @@ nothing with the rest of the site — no `game.css`, no `game.js`, no site
 favicon. Leave them that way unless asked.
 
 All three share the same page shell: a `.page` container (max-width 1200px,
-padding 1.75rem 1.5rem), a flex `header` with a 1.15rem `h1`, and the `.tabs`
-nav. Keep them in sync — they had drifted apart once already. Combine Multiple Lists
-keeps its content narrow via an inner `.tool` wrapper rather than by shrinking
-the whole page.
+padding 1.75rem 1.5rem), a flex `header` with a 1.15rem `h1`, the `.tabs` nav,
+a centred 580px intro block (`#importScreen`, or `.intro` on Combine Multiple
+Lists) and a `.footer-art` block at the bottom. Keep them in sync — they had
+drifted apart twice already. Combine Multiple Lists keeps its content narrow
+via an inner `.tool` wrapper rather than by shrinking the whole page.
+
+`skull-cards.webp` has an opaque white background, so `.footer-art img` uses
+`mix-blend-mode: multiply` to drop it against the off-white page. That works
+because these three pages are light-only; if a dark mode is ever added, the
+image needs a real alpha channel instead.
 
 They are presented as one project, **MTG Card Organizer**, with "Analyze List"
 as the entry point and a tab bar switching to "Combine Multiple Lists" and

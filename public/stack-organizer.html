@@ -39,6 +39,13 @@
   /* Content stays narrow; the header and tabs span the page like the others. */
   .tool {
     max-width: 760px;
+    margin: 0 auto;
+  }
+  /* Mirrors #importScreen on the other two tabs so all three centre alike. */
+  .intro {
+    max-width: 580px;
+    margin: 4rem auto 0;
+    text-align: center;
   }
 
   header {
@@ -358,6 +365,18 @@
     color: var(--text-muted);
     margin: 0 0 1.25rem;
   }
+
+  .footer-art {
+    margin: 3.5rem 0 1rem;
+    text-align: center;
+  }
+  .footer-art img {
+    width: clamp(160px, 30vw, 220px);
+    height: auto;
+    /* The source has an opaque white background. These pages are light-only,
+       so multiply drops the white against the off-white page. */
+    mix-blend-mode: multiply;
+  }
 </style>
 </head>
 <body>
@@ -374,13 +393,15 @@
 
   <div class="tool">
 
-  <p class="lede">Each file's name will be logged in the CSV.</p>
+  <div class="intro">
+    <p class="lede">Each file's name will be logged in the CSV.</p>
 
-  <!-- Drop zone -->
-  <div class="drop-zone" id="dropZone">
-    <div class="dz-label">Drop ManaBox CSV exports here, or click to browse</div>
-    <div class="dz-hint">each file = one stack · filename becomes the stack label</div>
-    <input type="file" id="fileInput" accept=".csv" multiple style="display:none">
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone">
+      <div class="dz-label">Drop ManaBox CSV exports here, or click to browse</div>
+      <div class="dz-hint">each file = one stack · filename becomes the stack label</div>
+      <input type="file" id="fileInput" accept=".csv" multiple style="display:none">
+    </div>
   </div>
 
   <!-- Stack list -->
@@ -434,6 +455,11 @@
     </div>
   </div>
 </div>
+
+  <div class="footer-art">
+    <img src="skull-cards.webp" width="2000" height="1895"
+         alt="Skull in a backwards cap holding a hand of Magic cards">
+  </div>
 </div>
 
 <script>

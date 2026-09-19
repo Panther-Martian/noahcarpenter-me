@@ -385,6 +385,18 @@
     color: var(--text-muted);
     margin: 0 0 1.75rem;
   }
+
+  .footer-art {
+    margin: 3.5rem 0 1rem;
+    text-align: center;
+  }
+  .footer-art img {
+    width: clamp(160px, 30vw, 220px);
+    height: auto;
+    /* The source has an opaque white background. These pages are light-only,
+       so multiply drops the white against the off-white page. */
+    mix-blend-mode: multiply;
+  }
 </style>
 </head>
 <body>
@@ -465,6 +477,11 @@
     </div>
   </div>
 
+
+  <div class="footer-art">
+    <img src="skull-cards.webp" width="2000" height="1895"
+         alt="Skull in a backwards cap holding a hand of Magic cards">
+  </div>
 </div>
 
 <script>
