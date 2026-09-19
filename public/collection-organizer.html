@@ -370,6 +370,21 @@
     color: var(--accent);
     border-bottom-color: var(--accent);
   }
+
+  .lede {
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text);
+    margin: 0 0 0.6rem;
+  }
+  .lede-sub {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+    margin: 0 0 1.75rem;
+  }
 </style>
 </head>
 <body>
@@ -388,6 +403,8 @@
 
   <!-- Import screen -->
   <div id="importScreen">
+    <p class="lede">Upload a ManaBox export and every card comes back enriched from Scryfall &mdash; foil-aware market price, EDHREC rank, and a tier badge for anything inside the commander top 1000.</p>
+    <p class="lede-sub">Then search by name, filter to &#9650;500 / &#9650;750 / &#9650;1000, foil or priced, and sort on any column. Export writes the enriched CSV back out &mdash; only the rows you filtered to, when a filter is on.</p>
     <div class="drop-zone" id="dropZone">
       <div class="dz-icon">&#9670;</div>
       <div class="dz-label">Drop your ManaBox CSV export here, or click to browse</div>
