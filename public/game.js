@@ -7,16 +7,18 @@ const esc = s => String(s).replace(/[<&]/g, c => c==="<"?"&lt;":"&amp;");
 
 const MAX_NAME = 24;
 
-/* ---------- Player name ---------- */
-const Player = {
-  KEY: "noah-player-name",
-  get(){ try { return localStorage.getItem(this.KEY) || ""; } catch { return ""; } },
-  set(n){ try { localStorage.setItem(this.KEY, n); } catch {} }
-};
+// Clear the name this build used to persist, so it stops haunting anyone who
+// already has one stored.
+try { localStorage.removeItem("noah-player-name"); } catch {}
 
 /**
  * Gates the game behind a name. Nothing is revealed until a name is entered,
  * so every score on the board belongs to somebody.
+ *
+ * The field is deliberately never prefilled. These games get handed between
+ * players, and a carried-over name means the next person posts a score under
+ * the last person's name without noticing.
+ *
  * onStart(name) fires once; later name changes fire onRename(name).
  */
 function initGate({ onStart, onRename }){
@@ -31,11 +33,11 @@ function initGate({ onStart, onRename }){
   let started = false;
 
   input.maxLength = MAX_NAME;
-  input.value = Player.get();
 
   const show = () => {
     gate.hidden = false; game.hidden = true; bar.hidden = true;
-    input.focus(); input.select();
+    input.value = "";
+    input.focus();
   };
   const hide = name => {
     gate.hidden = true; game.hidden = false; bar.hidden = false;
@@ -54,7 +56,6 @@ function initGate({ onStart, onRename }){
       return;
     }
     err.hidden = true;
-    Player.set(name);
     hide(name);
     if (!started) { started = true; onStart && onStart(name); }
     else { onRename && onRename(name); }
@@ -63,7 +64,7 @@ function initGate({ onStart, onRename }){
   change.addEventListener("click", show);
 
   show();   // the gate is always the first thing you see
-  return { name: () => Player.get(), reopen: show };
+  return { reopen: show };
 }
 
 /* ---------- Leaderboard ---------- */
