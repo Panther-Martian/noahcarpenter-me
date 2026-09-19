@@ -89,6 +89,12 @@ single-file apps copied in from elsewhere. They have their own look and share
 nothing with the rest of the site — no `game.css`, no `game.js`, no site
 favicon. Leave them that way unless asked.
 
+All three share the same page shell: a `.page` container (max-width 1200px,
+padding 1.75rem 1.5rem), a flex `header` with a 1.15rem `h1`, and the `.tabs`
+nav. Keep them in sync — they had drifted apart once already. Multiple Lists
+keeps its content narrow via an inner `.tool` wrapper rather than by shrinking
+the whole page.
+
 They are presented as one project, **MTG Card Organizer**, with "Single List"
 as the entry point and a tab bar switching to "Multiple Lists" and
 "CardKingdom Tool". The filenames still say collection/stack; only the visible
