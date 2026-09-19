@@ -48,7 +48,7 @@ console.log('\n— the API route reaches the handler —');
 
 console.log('\n— everything else falls through to static assets —');
 {
-  for (const p of ['/', '/index.html', '/map-slam.html', '/game.css', '/noah.webp', '/nope']) {
+  for (const p of ['/', '/index.html', '/map-slam.html', '/game.css', '/skull.webp', '/nope']) {
     const r = await hit(p);
     check(`${p} is served from assets`, (await r.text()) === 'ASSET:' + p);
   }

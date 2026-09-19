@@ -17,7 +17,8 @@ convention does **not** apply here; routes are wired explicitly in
 - `public/` — everything served as static files:
   - `index.html` — homepage
   - `404.html` — not-found page
-  - `noah.webp` — header artwork
+  - `skull.webp` — header artwork
+  - `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png` — site icons
   - `map-slam.html` — Map Slam (tap each state, name it)
   - `list-race.html` — List Race (type all 50 from memory)
   - `game.css` — shared styling for both games
