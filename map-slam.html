@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map Slam</title>
+<meta name="description" content="Tap each state and name it. Fill in all 50 and see your score.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="game.css">
+<style>
+.mapcard{background:var(--ocean);border:4px solid #2B1B5A;border-radius:22px;box-shadow:8px 8px 0 var(--pink);padding:10px;overflow:hidden}
+svg{display:block;width:100%;height:auto}
+.st{fill:var(--blank);stroke:#2B1B5A;stroke-width:1.2;stroke-linejoin:round;cursor:pointer;transition:fill .15s}
+.st:hover{fill:#FFF3B0}
+.st.right{fill:var(--right);cursor:default}
+.st.right:hover{fill:var(--right)}
+.st.wrong{fill:var(--wrong)}
+.st.answered{fill:#C9B8FF}
+.st.answered:hover{fill:#DCD0FF}
+.st.revealed{cursor:pointer}
+.st.sel{stroke:var(--pink);stroke-width:4;fill:#FFE66D}
+.st:focus{outline:none}
+.st:focus-visible{stroke:var(--pink);stroke-width:4}
+.lead{stroke:#2B1B5A;stroke-width:1.2}
+.dot{fill:#2B1B5A}
+
+/* Guess sheet */
+.sheet{position:fixed;left:50%;bottom:18px;transform:translate(-50%,160%);width:min(460px,calc(100% - 24px));
+  background:var(--card);border:4px solid #2B1B5A;border-radius:20px;box-shadow:8px 8px 0 #2B1B5A;padding:16px;z-index:10;
+  transition:transform .22s cubic-bezier(.3,1.4,.6,1)}
+.sheet.open{transform:translate(-50%,0) rotate(-1deg)}
+.sheet h2{font-family:"Bungee",sans-serif;font-weight:400;margin:0 0 10px;font-size:1.25rem}
+.sheet form{display:flex;gap:8px}
+.sheet input{flex:1;min-width:0;font:inherit;font-size:1.15rem;padding:10px 12px;border:3px solid #2B1B5A;border-radius:12px;background:#fff;color:#2B1B5A}
+.sheet input:focus{outline:3px solid var(--pink);outline-offset:1px}
+.sheet .go{background:var(--pink);color:#fff}
+.sheet .x{position:absolute;top:8px;right:10px;border:0;box-shadow:none;background:none;font-size:1.4rem;padding:2px 8px}
+@media (prefers-reduced-motion:reduce){ .sheet,.st{transition:none} }
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <a class="back" href="/">&larr; All projects</a>
+    <div class="playing" id="playing" hidden>
+      Playing as <b id="playingName"></b>
+      <button id="changeName" type="button">Change</button>
+    </div>
+  </div>
+
+  <h1>Map Slam</h1>
+  <p class="sub">Tap a state and name it. Fill in all 50, then submit. No peeking at what's right until the end.</p>
+
+  <section class="gate" id="gate" hidden>
+    <h2>Who's playing?</h2>
+    <p>Your score goes on the leaderboard, so it needs a name on it.</p>
+    <form id="gateForm" autocomplete="off">
+      <input id="who" placeholder="Your name" autocomplete="off" spellcheck="false" autocapitalize="words">
+      <button class="go" type="submit">Start</button>
+    </form>
+    <p class="err" id="gateErr" hidden>Enter a name first.</p>
+  </section>
+
+  <div id="gameArea" hidden>
+    <div class="sticky" style="margin-top:14px">
+      <div class="scores">
+        <div class="chip time" id="timeChip"><b id="time">0:00</b><span>time</span></div>
+        <div class="chip"><b id="answered">0</b><span>of 50 named</span></div>
+        <div class="chip score" id="scoreChip"><b id="score">0</b><span>score</span></div>
+      </div>
+    </div>
+    <div class="mapcard" style="margin-top:14px">
+      <svg id="map" viewBox="0 0 975 610" role="group" aria-label="Map of the United States"></svg>
+    </div>
+    <p class="hint" id="hint">Tiny East Coast states have their own little boxes out in the ocean. The clock starts on your first tap, and you can tap a named state to change your answer.</p>
+    <div class="row"><button class="submit" id="submit" disabled>Submit all 50</button><button id="reset">Start over</button></div>
+    <section class="board">
+      <h3>Map Slam leaderboard</h3>
+      <table><tbody id="board"><tr><td class="empty">Loading&hellip;</td></tr></tbody></table>
+    </section>
+  </div>
+</main>
+
+<div class="sheet" id="sheet" role="dialog" aria-label="Name this state">
+  <button class="x" id="closeSheet" aria-label="Close">&times;</button>
+  <h2 id="sheetTitle">What state is this?</h2>
+  <form id="guessForm" autocomplete="off">
+    <input id="guess" type="text" placeholder="Type the state name" spellcheck="false" autocapitalize="words">
+    <button class="go" type="submit">Lock it in</button>
+  </form>
+</div>
+<div class="win" id="win">
+  <div class="box"><h2 id="winTitle">Scored!</h2><p id="winText"></p><button id="winClose">Nice</button></div>
+</div>
+
+<script src="states.js"></script>
+<script src="game.js"></script>
+<script>
+const GAME = "map-slam";
+const NS = "http://www.w3.org/2000/svg";
+const CALLOUTS = {"Massachusetts":185,"Rhode Island":210,"Connecticut":235,"New Jersey":260,"Delaware":285,"Maryland":310};
+
+const svg = document.getElementById("map");
+const answers = {};           // name -> what the player typed
+const result  = {};           // name -> "right" | "wrong" (only after submit)
+const shapes  = {};
+let selected = null, start = null, timer = null, submitted = false;
+let player = "", lastEntry = null;
+
+const gStates = document.createElementNS(NS,"g");
+const gCallouts = document.createElementNS(NS,"g");
+svg.append(gStates, gCallouts);
+
+STATES.forEach(s => {
+  const path = document.createElementNS(NS,"path");
+  path.setAttribute("d", s.d);
+  path.setAttribute("tabindex","0");
+  path.setAttribute("role","button");
+  gStates.appendChild(path);
+  shapes[s.n] = [path];
+  if (CALLOUTS[s.n]) {
+    const y = CALLOUTS[s.n], x = 930;
+    const line = document.createElementNS(NS,"line");
+    line.setAttribute("x1", s.c[0]); line.setAttribute("y1", s.c[1]);
+    line.setAttribute("x2", x); line.setAttribute("y2", y + 9);
+    line.setAttribute("class","lead");
+    const dot = document.createElementNS(NS,"circle");
+    dot.setAttribute("cx", s.c[0]); dot.setAttribute("cy", s.c[1]); dot.setAttribute("r", 2);
+    dot.setAttribute("class","dot");
+    const box = document.createElementNS(NS,"rect");
+    box.setAttribute("x", x); box.setAttribute("y", y); box.setAttribute("width", 34); box.setAttribute("height", 18);
+    box.setAttribute("rx", 5); box.setAttribute("tabindex","0"); box.setAttribute("role","button");
+    gCallouts.append(line, dot, box);
+    shapes[s.n].push(box);
+  }
+  shapes[s.n].forEach(el => {
+    el.addEventListener("click", () => pick(s.n));
+    el.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") { e.preventDefault(); pick(s.n); } });
+  });
+  paint(s.n);
+});
+
+const sheet = document.getElementById("sheet"), guess = document.getElementById("guess");
+const sheetTitle = document.getElementById("sheetTitle");
+const form = document.getElementById("guessForm");
+const submitBtn = document.getElementById("submit");
+const winEl = document.getElementById("win");
+
+function paint(name){
+  let cls = "st";
+  if (submitted) cls += " revealed " + result[name];
+  else if (answers[name]) cls += " answered";
+  if (selected === name) cls += " sel";
+  shapes[name].forEach(el => {
+    el.setAttribute("class", cls);
+    el.setAttribute("aria-label", submitted ? name : answers[name] ? `Named: ${answers[name]}` : "Unnamed state");
+  });
+  if (selected === name) gStates.appendChild(shapes[name][0]);
+}
+
+function select(name){
+  const prev = selected; selected = name;
+  if (prev) paint(prev);
+  if (name) paint(name);
+}
+
+function pick(name){
+  if (submitted) {
+    select(name);
+    const said = answers[name];
+    sheetTitle.textContent = result[name] === "right"
+      ? `${name}. You got it!`
+      : `That's ${name}. You said "${said}".`;
+    form.style.display = "none";
+    sheet.classList.add("open");
+    return;
+  }
+  if (!start) { start = Date.now(); timer = setInterval(tickTime, 250); }
+  select(name);
+  sheetTitle.textContent = answers[name] ? "Change your answer?" : "What state is this?";
+  form.style.display = "";
+  sheet.classList.add("open");
+  guess.value = answers[name] || "";
+  guess.focus({preventScroll:true});
+  guess.select();
+}
+
+function closeSheet(){
+  sheet.classList.remove("open");
+  const prev = selected; select(null);
+  if (prev) shapes[prev][shapes[prev].length-1].focus({preventScroll:true});
+}
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  if (!selected || submitted) return;
+  const v = guess.value.trim();
+  if (v) answers[selected] = v; else delete answers[selected];
+  const name = selected;
+  sheet.classList.remove("open");
+  guess.blur();
+  select(null);
+  paint(name);
+  updateCount();
+});
+
+function updateCount(){
+  const n = Object.keys(answers).length;
+  document.getElementById("answered").textContent = n;
+  submitBtn.disabled = n < 50;
+  submitBtn.textContent = n < 50 ? `Submit all 50 (${50-n} to go)` : "Submit all 50";
+}
+
+document.getElementById("closeSheet").onclick = closeSheet;
+document.addEventListener("keydown", e => {
+  if (e.key==="Escape" && sheet.classList.contains("open")) closeSheet();
+  if (e.key==="Escape" && winEl.classList.contains("show")) winEl.classList.remove("show");
+});
+
+function tickTime(){ document.getElementById("time").textContent = fmt(Date.now()-start); }
+
+submitBtn.onclick = async () => {
+  if (Object.keys(answers).length < 50 || submitted) return;
+  submitted = true; clearInterval(timer);
+  const ms = Date.now() - start;
+  closeSheet();
+  let score = 0;
+  STATES.forEach(s => {
+    result[s.n] = norm(answers[s.n]) === norm(s.n) ? "right" : "wrong";
+    if (result[s.n] === "right") score++;
+    paint(s.n);
+  });
+  document.getElementById("time").textContent = fmtFine(ms);
+  document.getElementById("timeChip").classList.add("done");
+  document.getElementById("score").textContent = score;
+  document.getElementById("scoreChip").classList.add("show");
+  submitBtn.disabled = true; submitBtn.textContent = "Submitted";
+  document.getElementById("hint").textContent = "Tap any state to see what it was and what you said.";
+
+  document.getElementById("winTitle").textContent = score === 50 ? "Perfect 50!" : score >= 40 ? "Not bad!" : score >= 25 ? "Meh." : "Dumb dumb!";
+  document.getElementById("winTitle").style.color = score >= 40 ? "var(--right)" : "var(--wrong)";
+  document.getElementById("winText").textContent = `${player} scored ${score} out of 50 in ${fmtFine(ms)}.`;
+  winEl.classList.add("show");
+  document.getElementById("winClose").focus();
+
+  lastEntry = {name: player, ms: Math.round(ms), score};
+  const res = await Board.submit(GAME, {name: player, ms: Math.round(ms), score});
+  renderBoard(res);
+};
+document.getElementById("winClose").onclick = () => winEl.classList.remove("show");
+
+document.getElementById("reset").onclick = () => {
+  if (start && !submitted && !confirm("Wipe the map and reset the clock?")) return;
+  clearInterval(timer); start = null; submitted = false; selected = null;
+  for (const k in answers) delete answers[k];
+  for (const k in result) delete result[k];
+  STATES.forEach(s => paint(s.n));
+  sheet.classList.remove("open");
+  document.getElementById("time").textContent = "0:00";
+  document.getElementById("timeChip").classList.remove("done");
+  document.getElementById("scoreChip").classList.remove("show");
+  document.getElementById("hint").textContent = "Tiny East Coast states have their own little boxes out in the ocean. The clock starts on your first tap, and you can tap a named state to change your answer.";
+  updateCount();
+  window.scrollTo({top:0});
+};
+
+function renderBoard(res){
+  paintBoard(document.getElementById("board"), res,
+    r => [`<td class="t">${r.score}/50</td>`, `<td class="t">${fmtFine(r.ms)}</td>`],
+    "No scores yet. Be the first.", lastEntry);
+}
+
+updateCount();
+initGate({
+  onStart: async name => { player = name; renderBoard(await Board.load(GAME)); },
+  onRename: name => { player = name; }
+});
+</script>
+</body>
+</html>

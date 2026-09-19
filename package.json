@@ -1,0 +1,8 @@
+{
+  "name": "noahcarpenter-me",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/scores.test.mjs"
+  }
+}

@@ -1,13 +1,71 @@
 # noahcarpenter.me
 
-Personal site and projects. Plain static HTML — no build step.
+Personal site and projects. Plain static HTML with one Cloudflare Pages
+Function for the shared leaderboard — no build step.
 
 ## Structure
 
 - `index.html` — homepage
-- `state-slam.html` — State Slam (50-states game)
-- `noah.webp` — header artwork
 - `404.html` — not-found page
+- `noah.webp` — header artwork
+- `map-slam.html` — Map Slam (tap each state, name it)
+- `list-race.html` — List Race (type all 50 from memory)
+- `game.css` — shared styling for both games
+- `game.js` — shared helpers, the name gate, the leaderboard client
+- `states.js` — state names + SVG paths (Map Slam only, ~107KB)
+- `state-names.js` — just the 50 names (List Race only)
+- `functions/api/scores.js` — leaderboard API
+- `test/scores.test.mjs` — tests for the leaderboard API
+
+## The leaderboard
+
+Scores are shared by everyone and live in a Workers KV namespace, one key per
+game (`board:map-slam`, `board:list-race`), each holding the top 10.
+
+### One-time setup
+
+1. Cloudflare dashboard → **Storage & Databases** → **KV** → **Create a namespace**.
+   Name it `noah-scores`.
+2. Your Pages project → **Settings** → **Bindings** → **Add** → **KV namespace**.
+   - Variable name: `SCORES`  ← must be exactly this
+   - KV namespace: `noah-scores`
+3. Add it for both **Production** and **Preview**, then redeploy.
+
+Until that binding exists the API returns `leaderboard-unconfigured` and the
+games display "Leaderboard isn't switched on yet." They stay fully playable —
+only the board is missing.
+
+### API
+
+```
+GET  /api/scores?game=map-slam     -> { ok: true, rows: [...] }
+POST /api/scores                   -> { ok: true, rows: [...] }
+     body: { game, name, ms, score }   (score is Map Slam only)
+```
+
+Map Slam ranks by score descending, time breaking ties. List Race ranks by
+time ascending, and only records a clean sweep of all 50.
+
+Validation is deliberately light — this board is for friends. The server caps
+name length, collapses whitespace, and range-checks the numbers so junk can't
+corrupt the stored array, but it does not stop someone determined to POST a
+fake score by hand.
+
+Writes are read-modify-write against KV and are not atomic, so two people
+finishing in the same instant could drop one entry. Fine at this scale.
+
+### Tests
+
+```bash
+npm test
+```
+
+`package.json` exists only so Node treats the sources as ES modules for these
+tests. There are no dependencies and nothing to build — keep the Cloudflare
+build command empty.
+
+Runs the API against an in-memory stand-in for KV — ordering, the top-10 cap,
+name shaping, bad input, and the unconfigured case. No network, no deploy.
 
 ## Adding a project
 
@@ -36,4 +94,10 @@ column on a phone to two or three as you add them. Delete the
 python3 -m http.server 4173
 ```
 
-Then open http://localhost:4173
+Then open http://localhost:4173. The leaderboard will report itself
+unavailable, since `/api/scores` only exists on Cloudflare. To exercise the
+API locally instead:
+
+```bash
+npx wrangler pages dev . --kv SCORES
+```

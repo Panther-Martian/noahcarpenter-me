@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>List Race</title>
+<meta name="description" content="Type all 50 states from memory. Any mistake and you start looking again.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="game.css">
+<style>
+main{max-width:620px}
+ol.lrace{list-style:none;margin:16px 0 0;padding:14px;background:var(--card);
+  border:4px solid #2B1B5A;border-radius:22px;box-shadow:8px 8px 0 var(--pink)}
+ol.lrace li{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+ol.lrace li:last-child{margin-bottom:0}
+.lnum{flex:none;width:2.3em;height:2.3em;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);border:2.5px solid #2B1B5A;font-weight:700;font-size:.85rem;color:var(--ink)}
+ol.lrace li input{flex:1;min-width:0;font:inherit;font-size:1.1rem;padding:8px 12px;border:3px solid #2B1B5A;border-radius:12px;background:#fff;color:#2B1B5A}
+ol.lrace li input:focus{outline:3px solid var(--pink);outline-offset:1px}
+ol.lrace li.bad input{background:#FFD1D1;border-color:#D62839}
+ol.lrace li.bad .lnum{background:var(--wrong);color:#fff}
+ol.lrace li.ok input{background:#C8F2D8}
+ol.lrace li.ok .lnum{background:var(--right);color:#2B1B5A}
+#gameArea .row{margin-top:22px}
+#gameArea .submit{flex:1}
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <a class="back" href="/">&larr; All projects</a>
+    <div class="playing" id="playing" hidden>
+      Playing as <b id="playingName"></b>
+      <button id="changeName" type="button">Change</button>
+    </div>
+  </div>
+
+  <h1>List Race</h1>
+  <p class="sub">The clock starts on your first keystroke. Enter jumps to the next line. Spelling counts, capitals don't.</p>
+
+  <section class="gate" id="gate" hidden>
+    <h2>Who's playing?</h2>
+    <p>Your time goes on the leaderboard, so it needs a name on it.</p>
+    <form id="gateForm" autocomplete="off">
+      <input id="who" placeholder="Your name" autocomplete="off" spellcheck="false" autocapitalize="words">
+      <button class="go" type="submit">Start</button>
+    </form>
+    <p class="err" id="gateErr" hidden>Enter a name first.</p>
+  </section>
+
+  <div id="gameArea" hidden>
+    <div class="sticky" style="margin-top:14px">
+      <div class="scores">
+        <div class="chip time" id="lTimeChip"><b id="lTime">0:00.0</b><span>time</span></div>
+        <div class="chip"><b id="lFilled">0</b><span>of 50 filled</span></div>
+      </div>
+    </div>
+    <ol class="lrace" id="lList"></ol>
+    <div class="row"><button class="submit" id="lSubmit">Submit answers</button><button id="lReset">Start over</button></div>
+    <section class="board">
+      <h3>List Race leaderboard</h3>
+      <table><tbody id="lBoard"><tr><td class="empty">Loading&hellip;</td></tr></tbody></table>
+    </section>
+  </div>
+</main>
+
+<div class="win" id="lModal" role="dialog" aria-modal="true">
+  <div class="box" id="lBox"><h2 id="lTitle"></h2><p id="lText"></p><button id="lClose">Back to it</button></div>
+</div>
+
+<script src="state-names.js"></script>
+<script src="game.js"></script>
+<script>
+const GAME = "list-race";
+const VALID = new Set(STATE_NAMES.map(norm));
+const list = document.getElementById("lList");
+const timeEl = document.getElementById("lTime");
+const filledEl = document.getElementById("lFilled");
+const submitBtn = document.getElementById("lSubmit");
+let start = null, timer = null, finished = false, closeFocus = null;
+let player = "", lastEntry = null;
+
+for (let i = 0; i < 50; i++) {
+  const li = document.createElement("li");
+  li.innerHTML = `<span class="lnum">${i+1}</span><input type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="State ${i+1}">`;
+  list.appendChild(li);
+}
+const inputs = [...list.querySelectorAll("input")];
+
+inputs.forEach((inp, i) => {
+  inp.addEventListener("input", () => {
+    if (start === null && !finished) { start = performance.now(); timer = setInterval(() => timeEl.textContent = fmtFine(performance.now()-start), 100); }
+    inp.parentElement.className = "";
+    filledEl.textContent = inputs.filter(x => x.value.trim()).length;
+  });
+  inp.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); (i < 49 ? inputs[i+1] : submitBtn).focus(); }
+  });
+});
+
+function lev(a, b){
+  const d = Array.from({length:a.length+1}, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1] + (a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length];
+}
+function isMisspelling(v){
+  const limit = v.length >= 10 ? 3 : 2;
+  for (const st of VALID) if (lev(v, st) <= limit) return true;
+  return false;
+}
+
+const modal = document.getElementById("lModal");
+function showModal(kind, title, text, btn){
+  document.getElementById("lTitle").textContent = title;
+  document.getElementById("lText").textContent = text;
+  document.getElementById("lClose").textContent = btn;
+  document.getElementById("lTitle").style.color = kind === "win" ? "var(--right)" : "var(--wrong)";
+  modal.classList.add("show");
+  document.getElementById("lClose").focus();
+}
+function closeModal(){ modal.classList.remove("show"); if (closeFocus) closeFocus.focus(); }
+document.getElementById("lClose").onclick = closeModal;
+modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.classList.contains("show")) closeModal(); });
+
+submitBtn.onclick = () => {
+  if (finished) return;
+  const seen = new Set();
+  let ok = true, firstTypo = null;
+  inputs.forEach(inp => {
+    const li = inp.parentElement, v = norm(inp.value);
+    li.className = "";
+    if (!v || seen.has(v)) ok = false;
+    else if (!VALID.has(v)) {
+      ok = false;
+      if (v.length >= 3 && isMisspelling(v)) { li.className = "bad"; firstTypo = firstTypo || inp; }
+    }
+    seen.add(v);
+  });
+  if (ok) return win();
+  showModal("err", "Dumb dumb!",
+    firstTypo ? "Something's wrong. Red lines are spelled wrong, and that might not be everything. The clock is still running."
+              : "Something's wrong or repeated. Find it yourself. The clock is still running.",
+    "Back to it");
+  closeFocus = firstTypo || inputs[inputs.length-1];
+};
+
+async function win(){
+  finished = true; clearInterval(timer);
+  const ms = start === null ? 0 : performance.now() - start;
+  timeEl.textContent = fmtFine(ms);
+  document.getElementById("lTimeChip").classList.add("done");
+  inputs.forEach(x => { x.readOnly = true; x.parentElement.className = "ok"; });
+  submitBtn.disabled = true; submitBtn.textContent = "All 50!";
+  showModal("win", "All 50!", `${player} named every state in ${fmtFine(ms)}. Hand it over and hit Start over.`, "Nice");
+  closeFocus = document.getElementById("lReset");
+
+  lastEntry = {name: player, ms: Math.round(ms)};
+  renderBoard(await Board.submit(GAME, lastEntry));
+}
+
+document.getElementById("lReset").onclick = () => {
+  if (!finished && start !== null && !confirm("Wipe this list and reset the clock?")) return;
+  clearInterval(timer); start = null; finished = false;
+  timeEl.textContent = "0:00.0"; filledEl.textContent = "0";
+  document.getElementById("lTimeChip").classList.remove("done");
+  submitBtn.disabled = false; submitBtn.textContent = "Submit answers";
+  inputs.forEach(x => { x.value = ""; x.readOnly = false; x.parentElement.className = ""; });
+  window.scrollTo({top:0});
+  inputs[0].focus();
+};
+
+function renderBoard(res){
+  paintBoard(document.getElementById("lBoard"), res,
+    r => [`<td class="t">${fmtFine(r.ms)}</td>`],
+    "No finishers yet. Be the first.", lastEntry);
+}
+
+initGate({
+  onStart: async name => { player = name; inputs[0].focus(); renderBoard(await Board.load(GAME)); },
+  onRename: name => { player = name; }
+});
+</script>
+</body>
+</html>
