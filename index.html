@@ -10,33 +10,36 @@
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#FAF7F0;
-  --dots:#EDE6D6;
-  --ink:#2B1B5A;
-  --muted:#6A5C90;
+  --bg:#F2F4F6;
+  --dots:#E1E6EB;
+  --ink:#28313B;
+  --muted:#6B7A88;
   --card:#FFFFFF;
-  --accent:#E24A72;
-  --line:#2B1B5A;
+  --accent:#A8752F;
+  --accent-ink:#8A6224;
+  --line:#28313B;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#1B1436;
-    --dots:#241A48;
-    --ink:#F2ECFF;
-    --muted:#A79BD0;
-    --card:#241A48;
-    --accent:#FF7EA5;
-    --line:#4B3A86;
+    --bg:#1A2027;
+    --dots:#232C35;
+    --ink:#E8EDF2;
+    --muted:#93A3B2;
+    --card:#232C35;
+    --accent:#D9A85C;
+    --accent-ink:#E8BE7A;
+    --line:#3A4854;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#1B1436;
-  --dots:#241A48;
-  --ink:#F2ECFF;
-  --muted:#A79BD0;
-  --card:#241A48;
-  --accent:#FF7EA5;
-  --line:#4B3A86;
+  --bg:#1A2027;
+  --dots:#232C35;
+  --ink:#E8EDF2;
+  --muted:#93A3B2;
+  --card:#232C35;
+  --accent:#D9A85C;
+  --accent-ink:#E8BE7A;
+  --line:#3A4854;
 }
 
 *{box-sizing:border-box}
@@ -54,7 +57,7 @@ body{
 
 .wrap{max-width:720px;margin:0 auto;padding:72px 16px 96px}
 
-header{margin-bottom:56px}
+header{margin-bottom:56px;text-align:center}
 
 h1{
   font-family:"Bungee","Impact",sans-serif;
@@ -64,12 +67,10 @@ h1{
   font-size:clamp(3rem,12vw,5rem);
   color:var(--accent);
   text-shadow:2px 2px 0 var(--line);
-  transform:rotate(-1.5deg);
-  transform-origin:left center;
 }
 
 .tagline{
-  margin:20px 0 0;
+  margin:20px auto 0;
   font-size:1.05rem;
   color:var(--muted);
   max-width:46ch;
@@ -137,7 +138,7 @@ footer a{
   padding-bottom:1px;
 }
 footer a:hover,
-footer a:focus-visible{color:var(--accent);outline:none}
+footer a:focus-visible{color:var(--accent-ink);outline:none}
 
 @media (max-width:520px){
   .wrap{padding:48px 16px 72px}
