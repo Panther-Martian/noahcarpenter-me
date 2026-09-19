@@ -1,4 +1,12 @@
-import { onRequestGet, onRequestPost } from '../functions/api/scores.js';
+import { readFile } from 'node:fs/promises';
+
+// The site is deliberately zero-config: no package.json, so Cloudflare Pages
+// treats it as pure static + Functions and never tries to install or build.
+// That leaves Node seeing functions/api/scores.js as CommonJS, so load it as
+// a module by hand instead of importing it directly.
+const src = await readFile(new URL('../functions/api/scores.js', import.meta.url), 'utf8');
+const { onRequestGet, onRequestPost } =
+  await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
 
 // minimal in-memory stand-in for a KV namespace
 const makeKV = () => { const m = new Map();

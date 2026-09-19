@@ -1,7 +1,8 @@
 # noahcarpenter.me
 
 Personal site and projects. Plain static HTML with one Cloudflare Pages
-Function for the shared leaderboard — no build step.
+Function for the shared leaderboard. No build step, no dependencies — do not
+add a `package.json` unless you also configure the build, or deploys break.
 
 ## Structure
 
@@ -57,12 +58,14 @@ finishing in the same instant could drop one entry. Fine at this scale.
 ### Tests
 
 ```bash
-npm test
+node test/scores.test.mjs
 ```
 
-`package.json` exists only so Node treats the sources as ES modules for these
-tests. There are no dependencies and nothing to build — keep the Cloudflare
-build command empty.
+There is deliberately no `package.json` and no lockfile. Cloudflare Pages
+tries to install and build anything that looks like a Node project, and this
+site has nothing to build — leave the build command empty and the output
+directory `/`. The test loads the Function source directly so the repo can
+stay zero-config.
 
 Runs the API against an in-memory stand-in for KV — ordering, the top-10 cap,
 name shaping, bad input, and the unconfigured case. No network, no deploy.
