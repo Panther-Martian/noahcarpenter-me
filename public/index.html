@@ -10,7 +10,7 @@
 <meta name="description" content="Noah Carpenter — personal site and projects.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Lilita+One&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#F2F4F6;
@@ -63,7 +63,7 @@ body{
 header{margin-bottom:44px;text-align:center}
 
 h1{
-  font-family:"Bungee","Impact",sans-serif;
+  font-family:"Lilita One","Impact",sans-serif;
   font-weight:400;
   margin:0 0 32px;
   line-height:1.05;
@@ -109,9 +109,13 @@ h1{
 }
 .project h2{
   margin:0;
-  font-family:"Bungee","Impact",sans-serif;
+  font-family:"Lilita One","Impact",sans-serif;
   font-weight:400;
   font-size:1.15rem;
+  /* Bungee was caps-only, so these read as caps with no rule; Lilita One has
+     real lowercase, so the casing has to be asked for. */
+  text-transform:uppercase;
+  letter-spacing:.02em;
 }
 .project p{margin:6px 0 0;color:var(--muted);font-size:.95rem}
 
