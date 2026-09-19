@@ -24,8 +24,8 @@ game (`board:map-slam`, `board:list-race`), each holding the top 10.
 
 ### One-time setup
 
-1. Cloudflare dashboard → **Storage & Databases** → **KV** → **Create a namespace**.
-   Name it `noah-scores`.
+1. ~~Create the KV namespace.~~ Done — `noah-scores`, id
+   `6e18c86b2347477d8413da094cbd0eca`.
 2. Your Pages project → **Settings** → **Bindings** → **Add** → **KV namespace**.
    - Variable name: `SCORES`  ← must be exactly this
    - KV namespace: `noah-scores`
