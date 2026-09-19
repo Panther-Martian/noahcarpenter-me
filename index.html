@@ -18,6 +18,7 @@
   --accent:#A8752F;
   --accent-ink:#8A6224;
   --line:#28313B;
+  --sticker:transparent;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -29,6 +30,7 @@
     --accent:#D9A85C;
     --accent-ink:#E8BE7A;
     --line:#3A4854;
+    --sticker:#E8EDF2;
   }
 }
 :root[data-theme="dark"]{
@@ -40,6 +42,7 @@
   --accent:#D9A85C;
   --accent-ink:#E8BE7A;
   --line:#3A4854;
+  --sticker:#E8EDF2;
 }
 
 *{box-sizing:border-box}
@@ -69,11 +72,17 @@ h1{
   text-shadow:2px 2px 0 var(--line);
 }
 
-.tagline{
-  margin:20px auto 0;
-  font-size:1.05rem;
-  color:var(--muted);
-  max-width:46ch;
+.avatar{
+  display:block;
+  margin:0 auto 18px;
+  width:min(360px,100%);
+  height:auto;
+  /* die-cut outline so the black hoodie stays readable on the dark ground */
+  filter:
+    drop-shadow(1.5px 0 0 var(--sticker))
+    drop-shadow(-1.5px 0 0 var(--sticker))
+    drop-shadow(0 1.5px 0 var(--sticker))
+    drop-shadow(0 -1.5px 0 var(--sticker));
 }
 
 h2{
@@ -150,8 +159,9 @@ footer a:focus-visible{color:var(--accent-ink);outline:none}
 <div class="wrap">
 
   <header>
+    <img class="avatar" src="noah.webp" width="1698" height="926"
+         alt="Cartoon skeleton in a black hoodie, backwards cap and sunglasses">
     <h1>Noah</h1>
-    <p class="tagline">I build small things for the web. Most of them start as an argument about who&rsquo;s right.</p>
   </header>
 
   <main>
