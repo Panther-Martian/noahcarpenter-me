@@ -81,8 +81,7 @@ name shaping, bad input, and the unconfigured case. No network, no deploy.
 ## Adding a project
 
 1. Drop the project's HTML file in `public/` (or a folder under it with its own `index.html`).
-2. Add a card to the `<ul class="projects">` grid in `public/index.html`, above the
-   `<li class="empty">` placeholder:
+2. Add a card to the `<ul class="projects">` grid in `public/index.html`:
 
 ```html
 <li>
@@ -96,8 +95,7 @@ name shaping, bad input, and the unconfigured case. No network, no deploy.
 3. Commit and push. Cloudflare Pages deploys automatically.
 
 The grid is `repeat(auto-fit, minmax(240px, 1fr))`, so cards reflow from one
-column on a phone to two or three as you add them. Delete the
-`<li class="empty">More on the way.</li>` cell once you have enough projects.
+column on a phone to two or three as you add them.
 
 ## Local preview
 
