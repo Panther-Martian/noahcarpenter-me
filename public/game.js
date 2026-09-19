@@ -20,6 +20,10 @@ try { localStorage.removeItem("noah-player-name"); } catch {}
  * the last person's name without noticing.
  *
  * onStart(name) fires once; later name changes fire onRename(name).
+ *
+ * Once a run is under way the name is locked, so a score can't be finished
+ * under a different name than it was started under. Each game calls lock()
+ * when its clock starts and unlock() when it resets.
  */
 function initGate({ onStart, onRename }){
   const gate   = document.getElementById("gate");
@@ -30,7 +34,7 @@ function initGate({ onStart, onRename }){
   const bar    = document.getElementById("playing");
   const label  = document.getElementById("playingName");
   const change = document.getElementById("changeName");
-  let started = false;
+  let started = false, locked = false;
 
   input.maxLength = MAX_NAME;
 
@@ -61,10 +65,16 @@ function initGate({ onStart, onRename }){
     else { onRename && onRename(name); }
   });
 
-  change.addEventListener("click", show);
+  change.addEventListener("click", () => { if (!locked) show(); });
+
+  function setLocked(v){
+    locked = v;
+    change.disabled = v;
+    change.title = v ? "Locked once the clock starts. Hit Start over to change it." : "";
+  }
 
   show();   // the gate is always the first thing you see
-  return { reopen: show };
+  return { lock: () => setLocked(true), unlock: () => setLocked(false), reopen: show };
 }
 
 /* ---------- Leaderboard ---------- */

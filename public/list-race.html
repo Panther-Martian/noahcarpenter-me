@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>List Race</title>
+<title>State Race</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -40,7 +40,7 @@ ol.lrace li.ok .lnum{background:var(--right);color:#2B1B5A}
     </div>
   </div>
 
-  <h1>List Race</h1>
+  <h1>State Race</h1>
   <p class="sub">The clock starts on your first keystroke. Enter jumps to the next line. Spelling counts, capitals don't.</p>
 
   <section class="gate" id="gate" hidden>
@@ -63,7 +63,7 @@ ol.lrace li.ok .lnum{background:var(--right);color:#2B1B5A}
     <ol class="lrace" id="lList"></ol>
     <div class="row"><button class="submit" id="lSubmit">Submit answers</button><button id="lReset">Start over</button></div>
     <section class="board">
-      <h3>List Race leaderboard</h3>
+      <h3>State Race leaderboard</h3>
       <table><tbody id="lBoard"><tr><td class="empty">Loading&hellip;</td></tr></tbody></table>
     </section>
   </div>
@@ -83,7 +83,7 @@ const timeEl = document.getElementById("lTime");
 const filledEl = document.getElementById("lFilled");
 const submitBtn = document.getElementById("lSubmit");
 let start = null, timer = null, finished = false, closeFocus = null;
-let player = "", lastEntry = null;
+let player = "", lastEntry = null, gate = null;
 
 for (let i = 0; i < 50; i++) {
   const li = document.createElement("li");
@@ -94,7 +94,7 @@ const inputs = [...list.querySelectorAll("input")];
 
 inputs.forEach((inp, i) => {
   inp.addEventListener("input", () => {
-    if (start === null && !finished) { start = performance.now(); timer = setInterval(() => timeEl.textContent = fmtFine(performance.now()-start), 100); }
+    if (start === null && !finished) { start = performance.now(); timer = setInterval(() => timeEl.textContent = fmtFine(performance.now()-start), 100); gate && gate.lock(); }
     inp.parentElement.className = "";
     filledEl.textContent = inputs.filter(x => x.value.trim()).length;
   });
@@ -170,6 +170,7 @@ async function win(){
 document.getElementById("lReset").onclick = () => {
   if (!finished && start !== null && !confirm("Wipe this list and reset the clock?")) return;
   clearInterval(timer); start = null; finished = false;
+  gate && gate.unlock();
   timeEl.textContent = "0:00.0"; filledEl.textContent = "0";
   document.getElementById("lTimeChip").classList.remove("done");
   submitBtn.disabled = false; submitBtn.textContent = "Submit answers";
@@ -184,7 +185,7 @@ function renderBoard(res){
     "No finishers yet. Be the first.", lastEntry);
 }
 
-initGate({
+gate = initGate({
   onStart: async name => { player = name; inputs[0].focus(); renderBoard(await Board.load(GAME)); },
   onRename: name => { player = name; }
 });

@@ -19,15 +19,15 @@ convention does **not** apply here; routes are wired explicitly in
   - `404.html` — not-found page
   - `skull.webp` — header artwork
   - `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png` — site icons
-  - `map-slam.html` — Map Slam (tap each state, name it)
-  - `list-race.html` — List Race (type all 50 from memory)
-  - `collection-organizer.html` — MTG Card Organizer, "Single List" tab (the entry point)
-  - `stack-organizer.html` — MTG Card Organizer, "Multiple Lists" tab
+  - `map-slam.html` — State Slam (tap each state, name it)
+  - `list-race.html` — State Race (type all 50 from memory)
+  - `collection-organizer.html` — MTG Card Organizer, "Analyze List" tab (the entry point)
+  - `stack-organizer.html` — MTG Card Organizer, "Combine Multiple Lists" tab
   - `cardkingdom-tool.html` — MTG Card Organizer, "CardKingdom Tool" tab
   - `game.css` — shared styling for both games
   - `game.js` — shared helpers, the name gate, the leaderboard client
-  - `states.js` — state names + SVG paths (Map Slam only, ~107KB)
-  - `state-names.js` — just the 50 names (List Race only)
+  - `states.js` — state names + SVG paths (State Slam only, ~107KB)
+  - `state-names.js` — just the 50 names (State Race only)
 - `test/scores.test.mjs` — tests for the leaderboard API
 - `test/worker.test.mjs` — tests for request routing
 
@@ -52,10 +52,10 @@ only the board is missing.
 ```
 GET  /api/scores?game=map-slam     -> { ok: true, rows: [...] }
 POST /api/scores                   -> { ok: true, rows: [...] }
-     body: { game, name, ms, score }   (score is Map Slam only)
+     body: { game, name, ms, score }   (score is State Slam only)
 ```
 
-Map Slam ranks by score descending, time breaking ties. List Race ranks by
+State Slam ranks by score descending, time breaking ties. State Race ranks by
 time ascending, and only records a clean sweep of all 50.
 
 Validation is deliberately light — this board is for friends. The server caps
@@ -91,12 +91,12 @@ favicon. Leave them that way unless asked.
 
 All three share the same page shell: a `.page` container (max-width 1200px,
 padding 1.75rem 1.5rem), a flex `header` with a 1.15rem `h1`, and the `.tabs`
-nav. Keep them in sync — they had drifted apart once already. Multiple Lists
+nav. Keep them in sync — they had drifted apart once already. Combine Multiple Lists
 keeps its content narrow via an inner `.tool` wrapper rather than by shrinking
 the whole page.
 
-They are presented as one project, **MTG Card Organizer**, with "Single List"
-as the entry point and a tab bar switching to "Multiple Lists" and
+They are presented as one project, **MTG Card Organizer**, with "Analyze List"
+as the entry point and a tab bar switching to "Combine Multiple Lists" and
 "CardKingdom Tool". The filenames still say collection/stack; only the visible
 labels changed. They stay two separate pages
 because both define `#dropZone` and `#fileInput`; merging them into one
@@ -108,6 +108,10 @@ Their runtime dependencies are Scryfall's public API
 (`POST https://api.scryfall.com/cards/collection`) and, for the CardKingdom
 tab, `https://api.cardkingdom.com/api/v2/pricelist`. CSVs are supplied by the
 user at runtime; none are stored in this repo.
+
+The games' `GAME` keys stay `map-slam` and `list-race`, and the page
+filenames are unchanged — only the visible names became State Slam and State
+Race. Renaming the keys would orphan every score already in KV.
 
 `cardkingdom-tool.html` is a browser port of `ck_buylist_api.py`, not a copied
 file. Card Kingdom's pricelist is CORS-enabled, so it runs client-side with no

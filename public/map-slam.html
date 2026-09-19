@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Map Slam</title>
+<title>State Slam</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -53,7 +53,7 @@ svg{display:block;width:100%;height:auto}
     </div>
   </div>
 
-  <h1>Map Slam</h1>
+  <h1>State Slam</h1>
   <p class="sub">Tap a state and name it. Fill in all 50, then submit. No peeking at what's right until the end.</p>
 
   <section class="gate" id="gate" hidden>
@@ -80,7 +80,7 @@ svg{display:block;width:100%;height:auto}
     <p class="hint" id="hint">Tiny East Coast states have their own little boxes out in the ocean. The clock starts on your first tap, and you can tap a named state to change your answer.</p>
     <div class="row"><button class="submit" id="submit" disabled>Submit all 50</button><button id="reset">Start over</button></div>
     <section class="board">
-      <h3>Map Slam leaderboard</h3>
+      <h3>State Slam leaderboard</h3>
       <table><tbody id="board"><tr><td class="empty">Loading&hellip;</td></tr></tbody></table>
     </section>
   </div>
@@ -110,7 +110,7 @@ const answers = {};           // name -> what the player typed
 const result  = {};           // name -> "right" | "wrong" (only after submit)
 const shapes  = {};
 let selected = null, start = null, timer = null, submitted = false;
-let player = "", lastEntry = null;
+let player = "", lastEntry = null, gate = null;
 
 const gStates = document.createElementNS(NS,"g");
 const gCallouts = document.createElementNS(NS,"g");
@@ -180,7 +180,7 @@ function pick(name){
     sheet.classList.add("open");
     return;
   }
-  if (!start) { start = Date.now(); timer = setInterval(tickTime, 250); }
+  if (!start) { start = Date.now(); timer = setInterval(tickTime, 250); gate && gate.lock(); }
   select(name);
   sheetTitle.textContent = answers[name] ? "Change your answer?" : "What state is this?";
   form.style.display = "";
@@ -257,6 +257,7 @@ document.getElementById("winClose").onclick = () => winEl.classList.remove("show
 document.getElementById("reset").onclick = () => {
   if (start && !submitted && !confirm("Wipe the map and reset the clock?")) return;
   clearInterval(timer); start = null; submitted = false; selected = null;
+  gate && gate.unlock();
   for (const k in answers) delete answers[k];
   for (const k in result) delete result[k];
   STATES.forEach(s => paint(s.n));
@@ -276,7 +277,7 @@ function renderBoard(res){
 }
 
 updateCount();
-initGate({
+gate = initGate({
   onStart: async name => { player = name; renderBoard(await Board.load(GAME)); },
   onRename: name => { player = name; }
 });
