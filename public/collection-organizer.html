@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collection Organizer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f9f8;
+    --surface: #ffffff;
+    --border: #e0ddd8;
+    --border-strong: #c8c4bc;
+    --text: #1a1a18;
+    --text-muted: #6b6860;
+    --text-faint: #a09d98;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --row-hover: #f5f4f2;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.75rem 1.5rem;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+  }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Import screen ── */
+  #importScreen {
+    max-width: 580px;
+    margin: 4rem auto 0;
+    text-align: center;
+  }
+
+  .drop-zone {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    cursor: pointer;
+    background: var(--surface);
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 1rem;
+    user-select: none;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+
+  .dz-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.3;
+  }
+
+  .dz-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .dz-hint {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+  }
+
+  /* ── Progress ── */
+  #progressScreen {
+    max-width: 480px;
+    margin: 5rem auto 0;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .progress-fill.done { background: var(--success); }
+  .progress-fill.error { background: var(--danger); }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  /* ── Results screen ── */
+  #resultsScreen { display: none; }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .filename-badge {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.3rem 0.65rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.4rem 0.75rem;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    width: 220px;
+    transition: border-color 0.15s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+
+  .filter-group {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    border-radius: 5px;
+    padding: 0.3rem 0.65rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+
+  .filter-btn:hover { border-color: var(--border-strong); color: var(--text); }
+  .filter-btn.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .filter-btn.active.f500 { background: #92400e; border-color: #92400e; color: #fff; }
+  .filter-btn.active.f750 { background: #14532d; border-color: #14532d; color: #fff; }
+  .filter-btn.active.f1000 { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+
+  .spacer { flex: 1; }
+
+  .row-count {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Buttons */
+  .btn {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 7px;
+    padding: 0.42rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+  }
+
+  .btn-primary:hover { background: #1d4ed8; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    min-width: 780px;
+  }
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  th {
+    text-align: left;
+    padding: 9px 12px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    user-select: none;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+
+  th:hover { color: var(--text); }
+  th.sort-asc::after { content: ' ↑'; opacity: 0.6; }
+  th.sort-desc::after { content: ' ↓'; opacity: 0.6; }
+  th:not(.sortable) { cursor: default; }
+
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--row-hover); }
+  tr.row-valuable td { background: #dcfce7; }
+  tr.row-valuable:hover td { background: #bbf7d0; }
+
+  .col-name   { width: 24%; }
+  .col-set    { width: 8%; }
+  .col-foil   { width: 6%; }
+  .col-cond   { width: 9%; }
+  .col-qty    { width: 5%; text-align: right; }
+  .col-price  { width: 10%; text-align: right; font-family: var(--mono); }
+  .col-rank   { width: 9%; text-align: right; font-family: var(--mono); }
+  .col-tier   { width: 8%; }
+  .col-rarity { width: 8%; }
+  .col-lang   { width: 6%; }
+
+  td.col-qty, td.col-price, td.col-rank { font-family: var(--mono); font-size: 0.75rem; }
+
+  /* Tier badges */
+  .tier {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.63rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .tier-500  { background: #fef3c7; color: #92400e; }
+  .tier-750  { background: #dcfce7; color: #14532d; }
+  .tier-1000 { background: #dbeafe; color: #1e3a8a; }
+
+  .foil-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #f0f0ff;
+    color: #4338ca;
+    letter-spacing: 0.04em;
+  }
+
+  .rarity-m { color: #b45309; font-weight: 600; }
+  .rarity-r { color: #d97706; font-weight: 500; }
+  .rarity-u { color: #6b7280; }
+  .rarity-c { color: #9ca3af; }
+
+  /* Empty state */
+  .empty-row td {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-faint);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>Collection Organizer</h1>
+    <span class="subtitle">manabox csv · scryfall enrichment · in-browser review</span>
+  </header>
+
+  <!-- Import screen -->
+  <div id="importScreen">
+    <div class="drop-zone" id="dropZone">
+      <div class="dz-icon">&#9670;</div>
+      <div class="dz-label">Drop your ManaBox CSV export here, or click to browse</div>
+      <div class="dz-hint">Scryfall enrichment runs automatically after import</div>
+    </div>
+    <input type="file" id="fileInput" accept=".csv" style="display:none">
+  </div>
+
+  <!-- Progress screen -->
+  <div id="progressScreen" style="display:none">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">Starting...</div>
+  </div>
+
+  <!-- Results screen -->
+  <div id="resultsScreen">
+    <div class="top-bar">
+      <span class="filename-badge" id="filenameBadge"></span>
+
+      <input type="text" class="search-input" id="searchInput" placeholder="Search cards...">
+
+      <div class="filter-group">
+        <button class="filter-btn" data-tier="all">All</button>
+        <button class="filter-btn f500" data-tier="500">&#9650;500</button>
+        <button class="filter-btn f750" data-tier="750">&#9650;750</button>
+        <button class="filter-btn f1000" data-tier="1000">&#9650;1000</button>
+        <button class="filter-btn" data-tier="foil">Foil</button>
+        <button class="filter-btn" data-tier="priced">Priced</button>
+      </div>
+
+      <span class="spacer"></span>
+      <span class="row-count" id="rowCount"></span>
+      <button class="btn btn-secondary" id="resetOrderBtn" title="Restore original import order">Reset order</button>
+      <button class="btn btn-primary" id="exportBtn">Export CSV</button>
+      <button class="btn btn-secondary" id="newFileBtn">New file</button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th class="col-name sortable"  data-col="Name">Name</th>
+            <th class="col-set  sortable"  data-col="Set Code">Set</th>
+            <th class="col-foil"           data-col="Foil">Foil</th>
+            <th class="col-cond sortable"  data-col="Condition">Condition</th>
+            <th class="col-qty  sortable"  data-col="Quantity">Qty</th>
+            <th class="col-price sortable" data-col="market_price">Market $</th>
+            <th class="col-rank  sortable" data-col="edhrec_rank">EDHREC rank</th>
+            <th class="col-tier"           data-col="edhrec_tier">Tier</th>
+            <th class="col-rarity sortable" data-col="Rarity">Rarity</th>
+            <th class="col-lang"           data-col="Language">Lang</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── CSV utilities ─────────────────────────────────────────────────────────────
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseCSV(text) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const vals = parseCSVLine(line);
+    const row = {};
+    headers.forEach((h, j) => row[h] = (vals[j] || '').trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+function toCSV(cols, rows) {
+  const esc = v => {
+    const s = String(v == null ? '' : v);
+    return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [cols.map(esc).join(',')];
+  rows.forEach(r => lines.push(cols.map(c => esc(r[c])).join(',')));
+  return lines.join('\n');
+}
+
+function downloadCSV(content, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Scryfall enrichment ───────────────────────────────────────────────────────
+
+function edhrecTier(rank) {
+  if (rank == null || rank === '') return '';
+  if (rank <= 500) return '500';
+  if (rank <= 750) return '750';
+  if (rank <= 1000) return '1000';
+  return '';
+}
+
+async function enrichWithScryfall(rows, onProgress) {
+  const ids = [...new Set(rows.map(r => r['Scryfall ID']).filter(Boolean))];
+  const map = {};
+
+  if (!ids.length) {
+    onProgress(90, 'No Scryfall IDs found — skipping enrichment');
+    return rows.map(r => ({ ...r, market_price: '', edhrec_rank: '', edhrec_tier: '' }));
+  }
+
+  const BATCH = 75;
+  const totalBatches = Math.ceil(ids.length / BATCH);
+
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    const batchNum = Math.floor(i / BATCH) + 1;
+    onProgress(
+      10 + Math.round((i / ids.length) * 78),
+      `Fetching Scryfall data — batch ${batchNum}/${totalBatches}...`
+    );
+
+    try {
+      const res = await fetch('https://api.scryfall.com/cards/collection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifiers: batch.map(id => ({ id })) })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        (data.data || []).forEach(card => {
+          map[card.id] = {
+            price_nf:  card.prices?.usd || '',
+            price_f:   card.prices?.usd_foil || '',
+            rank:      card.edhrec_rank != null ? card.edhrec_rank : '',
+            tier:      edhrecTier(card.edhrec_rank),
+            set_code:  (card.set || '').toUpperCase(),
+            set_name:  card.set_name || '',
+          };
+        });
+      }
+    } catch (e) {
+      console.warn('Scryfall error:', e);
+    }
+
+    if (i + BATCH < ids.length) await new Promise(r => setTimeout(r, 120));
+  }
+
+  onProgress(93, 'Building rows...');
+
+  return rows.map(row => {
+    const d = map[row['Scryfall ID']] || {};
+    const isFoil = ['foil', '1', 'true', 'yes'].includes((row['Foil'] || '').toLowerCase());
+    const market_price = isFoil ? (d.price_f || d.price_nf || '') : (d.price_nf || '');
+    const setCode = row['Set Code'] || row['Set code'] || row['set_code'] || row['Set'] || d.set_code || '';
+    const setName = row['Set Name'] || row['Set name'] || row['set_name'] || d.set_name || '';
+    return { ...row, 'Set Code': setCode, 'Set Name': setName, market_price, edhrec_rank: d.rank != null ? d.rank : '', edhrec_tier: d.tier || '', _set_code: setCode, _set_name: setName };
+  });
+}
+
+// ── App state ─────────────────────────────────────────────────────────────────
+
+let allRows      = [];
+let originalOrder = [];
+let filteredRows = [];
+let sortCol      = null;
+let sortDir      = 'asc';
+let activeTier   = 'all';
+let searchTerm   = '';
+let currentFilename = '';
+
+const OUTPUT_COLS = [
+  'Name', 'Set Code', 'Set Name', 'Foil', 'Rarity', 'Condition', 'Quantity',
+  'Language', 'Scryfall ID', 'market_price', 'edhrec_rank', 'edhrec_tier'
+];
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function tierBadge(tier) {
+  if (!tier) return '';
+  return `<span class="tier tier-${tier}">&#9650;${tier}</span>`;
+}
+
+function foilBadge(foil) {
+  const v = (foil || '').toLowerCase();
+  if (['foil', '1', 'true', 'yes'].includes(v)) return '<span class="foil-badge">foil</span>';
+  if (v === 'etched') return '<span class="foil-badge">etched</span>';
+  return '';
+}
+
+function rarityClass(r) {
+  const map = { m: 'rarity-m', r: 'rarity-r', u: 'rarity-u', c: 'rarity-c',
+                mythic: 'rarity-m', rare: 'rarity-r', uncommon: 'rarity-u', common: 'rarity-c' };
+  return map[(r || '').toLowerCase()] || '';
+}
+
+function applyFiltersAndSort() {
+  let rows = allRows.slice();
+
+  // Search
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase();
+    rows = rows.filter(r => (r.Name || '').toLowerCase().includes(q));
+  }
+
+  // Tier / foil filter
+  if (activeTier === 'foil') {
+    rows = rows.filter(r => ['foil','1','true','yes','etched'].includes((r.Foil||'').toLowerCase()));
+  } else if (activeTier === 'priced') {
+    rows = rows.filter(r => r.market_price);
+  } else if (activeTier !== 'all') {
+    rows = rows.filter(r => r.edhrec_tier === activeTier);
+  }
+
+  // Sort
+  if (sortCol) {
+    rows.sort((a, b) => {
+      let av = a[sortCol] ?? '';
+      let bv = b[sortCol] ?? '';
+      // Numeric cols
+      if (['Quantity', 'market_price', 'edhrec_rank'].includes(sortCol)) {
+        av = av === '' ? (sortDir === 'asc' ? Infinity : -Infinity) : parseFloat(av);
+        bv = bv === '' ? (sortDir === 'asc' ? Infinity : -Infinity) : parseFloat(bv);
+      } else {
+        av = String(av).toLowerCase();
+        bv = String(bv).toLowerCase();
+      }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  filteredRows = rows;
+  renderTable();
+  document.getElementById('rowCount').textContent =
+    `${rows.length.toLocaleString()} of ${allRows.length.toLocaleString()} cards`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  if (!filteredRows.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">No cards match the current filter</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredRows.map(r => {
+    const price = r.market_price ? '$' + parseFloat(r.market_price).toFixed(2) : '—';
+    const rank  = r.edhrec_rank !== '' ? Number(r.edhrec_rank).toLocaleString() : '—';
+    const isValuable = r.market_price && parseFloat(r.market_price) >= 0.80;
+    return `<tr${isValuable ? ' class="row-valuable"' : ''}>
+      <td class="col-name"  title="${esc(r.Name)}">${esc(r.Name)}</td>
+      <td class="col-set" title="${esc(r._set_name)}">${esc(r._set_code || r._set_name)}</td>
+      <td class="col-foil">${foilBadge(r.Foil)}</td>
+      <td class="col-cond">${esc(r.Condition || '')}</td>
+      <td class="col-qty">${esc(r.Quantity || '')}</td>
+      <td class="col-price">${price}</td>
+      <td class="col-rank">${rank}</td>
+      <td class="col-tier">${tierBadge(r.edhrec_tier)}</td>
+      <td class="col-rarity"><span class="${rarityClass(r.Rarity)}">${esc(r.Rarity || '')}</span></td>
+      <td class="col-lang">${esc(r.Language || '')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.col === sortCol) {
+      th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+// ── Progress helpers ──────────────────────────────────────────────────────────
+
+function showScreen(id) {
+  ['importScreen', 'progressScreen', 'resultsScreen'].forEach(s => {
+    document.getElementById(s).style.display = (s === id) ? 'block' : 'none';
+  });
+}
+
+function setProgress(pct, msg, state) {
+  const fill = document.getElementById('progressFill');
+  fill.style.width = pct + '%';
+  fill.className = 'progress-fill' + (state === 'done' ? ' done' : state === 'error' ? ' error' : '');
+  document.getElementById('progressLabel').textContent = msg;
+}
+
+// ── File handling ─────────────────────────────────────────────────────────────
+
+async function handleFile(file) {
+  if (!file || !file.name.toLowerCase().endsWith('.csv')) return;
+  currentFilename = file.name.replace(/\.csv$/i, '');
+  showScreen('progressScreen');
+  setProgress(5, 'Parsing CSV...');
+
+  const text = await file.text();
+  const rows = parseCSV(text);
+  if (!rows.length) {
+    setProgress(100, 'Error: no rows found in CSV', 'error');
+    return;
+  }
+
+  setProgress(10, `Parsed ${rows.length} cards. Fetching Scryfall data...`);
+
+  try {
+    const enriched = await enrichWithScryfall(rows, (pct, msg) => setProgress(pct, msg));
+    setProgress(100, `Done — ${enriched.length} cards enriched`, 'done');
+
+    allRows = enriched;
+    originalOrder = enriched.slice();
+    sortCol = null;
+    sortDir = 'asc';
+    activeTier = 'all';
+    searchTerm = '';
+
+    document.getElementById('filenameBadge').textContent = currentFilename + '.csv';
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tier === 'all');
+    });
+
+    applyFiltersAndSort();
+
+    // Small delay so user sees the done state before table appears
+    setTimeout(() => showScreen('resultsScreen'), 400);
+  } catch (e) {
+    setProgress(100, 'Error: ' + e.message, 'error');
+  }
+}
+
+// ── Event listeners ───────────────────────────────────────────────────────────
+
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+// Sort
+document.querySelectorAll('th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortCol = col;
+      sortDir = col === 'edhrec_rank' ? 'asc' : 'asc';
+    }
+    updateSortHeaders();
+    applyFiltersAndSort();
+  });
+});
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeTier = btn.dataset.tier;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b === btn);
+    });
+    applyFiltersAndSort();
+  });
+});
+
+// Search
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchTerm = e.target.value.trim();
+  applyFiltersAndSort();
+});
+
+// Export
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const rows = filteredRows.length < allRows.length ? filteredRows : allRows;
+  const suffix = filteredRows.length < allRows.length ? '_filtered' : '';
+  downloadCSV(toCSV(OUTPUT_COLS, rows), currentFilename + suffix + '_organized.csv');
+});
+
+// Reset order
+document.getElementById('resetOrderBtn').addEventListener('click', () => {
+  allRows = originalOrder.slice();
+  sortCol = null;
+  sortDir = 'asc';
+  document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+  applyFiltersAndSort();
+});
+
+// New file
+document.getElementById('newFileBtn').addEventListener('click', () => {
+  allRows = [];
+  filteredRows = [];
+  fileInput.value = '';
+  showScreen('importScreen');
+});
+
+// Init
+showScreen('importScreen');
+</script>
+</body>
+</html>

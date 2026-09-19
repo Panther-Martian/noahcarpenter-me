@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stack Organizer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f9f8;
+    --surface: #ffffff;
+    --border: #e0ddd8;
+    --border-strong: #c8c4bc;
+    --text: #1a1a18;
+    --text-muted: #6b6860;
+    --text-faint: #a09d98;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --success: #16a34a;
+    --success-bg: #f0fdf4;
+    --danger: #dc2626;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.2rem;
+  }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 2.25rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    background: var(--surface);
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 1rem;
+    user-select: none;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+
+  .drop-zone .dz-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .drop-zone .dz-hint {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+  }
+
+  /* Stack list */
+  .stack-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .stack-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.9rem;
+  }
+
+  .stack-num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    min-width: 22px;
+  }
+
+  .stack-input {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.3rem 0.6rem;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .stack-input:focus { border-color: var(--accent); }
+
+  .stack-count {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-faint);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0 3px;
+    transition: color 0.15s;
+  }
+
+  .remove-btn:hover { color: var(--danger); }
+
+  /* Buttons */
+  .btn {
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 7px;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+  }
+
+  .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  /* Progress */
+  .progress-wrap {
+    margin-bottom: 1rem;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .progress-bar.done { background: var(--success); }
+  .progress-bar.error { background: var(--danger); }
+
+  .progress-msg {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+    font-family: var(--mono);
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+
+  /* Tier badges */
+  .tier {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .tier-500 { background: #fef3c7; color: #92400e; }
+  .tier-750 { background: #dcfce7; color: #14532d; }
+  .tier-1000 { background: #dbeafe; color: #1e3a8a; }
+
+  /* Preview table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    table-layout: fixed;
+  }
+
+  th {
+    text-align: left;
+    padding: 6px 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  .table-footer {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    padding: 6px 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Footer note */
+  .note {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    line-height: 1.8;
+    margin-top: 1rem;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Stack Organizer</h1>
+    <div class="subtitle">mtg collection · manabox csv → enriched stack sheet</div>
+  </header>
+
+  <!-- Drop zone -->
+  <div class="drop-zone" id="dropZone">
+    <div class="dz-label">Drop ManaBox CSV exports here, or click to browse</div>
+    <div class="dz-hint">each file = one stack · filename becomes the stack label</div>
+    <input type="file" id="fileInput" accept=".csv" multiple style="display:none">
+  </div>
+
+  <!-- Stack list -->
+  <div class="stack-list" id="stackList"></div>
+
+  <!-- Process button -->
+  <div class="actions" id="actionArea" style="display:none">
+    <button class="btn btn-primary" id="processBtn">Process cards</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap hidden" id="progressWrap">
+    <div class="progress-track">
+      <div class="progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+    <div class="progress-msg" id="progressMsg"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" class="hidden">
+    <hr class="divider">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="table-wrap">
+      <table id="previewTable">
+        <thead>
+          <tr>
+            <th style="width:28%">Name</th>
+            <th style="width:12%">Stack</th>
+            <th style="width:12%">Condition</th>
+            <th style="width:13%">market_price</th>
+            <th style="width:12%">edhrec_rank</th>
+            <th style="width:13%">edhrec_tier</th>
+          </tr>
+        </thead>
+        <tbody id="previewBody"></tbody>
+      </table>
+      <div class="table-footer" id="tableFooter"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="downloadBtn">Download CSV</button>
+      <button class="btn btn-secondary" id="resetBtn">Start over</button>
+    </div>
+
+    <div class="note" id="outputNote">
+      Output columns: Name · Stack · Set Code · Set Name · Foil · Condition · Quantity · Scryfall ID · market_price · edhrec_rank · edhrec_tier<br>
+      Tier thresholds: <span class="tier tier-500">▲500</span> cEDH staple &nbsp;
+      <span class="tier tier-750">▲750</span> high-play &nbsp;
+      <span class="tier tier-1000">▲1000</span> competitive &nbsp;·&nbsp;
+      foil price used for foil cards
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CSV utilities ─────────────────────────────────────────────────────────────
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseCSV(text) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const vals = parseCSVLine(line);
+    const row = {};
+    headers.forEach((h, j) => row[h] = (vals[j] || '').trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+function toCSV(cols, rows) {
+  const esc = v => {
+    const s = String(v == null ? '' : v);
+    return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [cols.map(esc).join(',')];
+  rows.forEach(r => lines.push(cols.map(c => esc(r[c])).join(',')));
+  return lines.join('\n');
+}
+
+function downloadCSV(content, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Scryfall enrichment ───────────────────────────────────────────────────────
+
+function edhrecTier(rank) {
+  if (rank == null || rank === '') return '';
+  if (rank <= 500) return '500';
+  if (rank <= 750) return '750';
+  if (rank <= 1000) return '1000';
+  return '';
+}
+
+async function enrichWithScryfall(rows, onProgress) {
+  const ids = [...new Set(rows.map(r => r['Scryfall ID']).filter(Boolean))];
+  if (!ids.length) {
+    onProgress(90, 'No Scryfall IDs found — skipping enrichment');
+    return rows.map(r => ({ ...r, market_price: '', edhrec_rank: '', edhrec_tier: '' }));
+  }
+
+  const BATCH = 75;
+  const map = {};
+  const totalBatches = Math.ceil(ids.length / BATCH);
+
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    const batchNum = Math.floor(i / BATCH) + 1;
+    onProgress(
+      10 + Math.round((i / ids.length) * 78),
+      `Scryfall batch ${batchNum}/${totalBatches} (${Math.min(i + BATCH, ids.length)}/${ids.length} cards)...`
+    );
+
+    try {
+      const res = await fetch('https://api.scryfall.com/cards/collection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifiers: batch.map(id => ({ id })) })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        (data.data || []).forEach(card => {
+          map[card.id] = {
+            price_nf:  card.prices?.usd || '',
+            price_f:   card.prices?.usd_foil || '',
+            rank:      card.edhrec_rank != null ? card.edhrec_rank : '',
+            tier:      edhrecTier(card.edhrec_rank),
+            set_code:  (card.set || '').toUpperCase(),
+            set_name:  card.set_name || '',
+          };
+        });
+      } else {
+        console.warn(`Scryfall batch ${batchNum} returned ${res.status}`);
+      }
+    } catch (e) {
+      console.warn('Scryfall fetch error:', e);
+    }
+
+    if (i + BATCH < ids.length) await new Promise(r => setTimeout(r, 120));
+  }
+
+  onProgress(93, 'Building output rows...');
+
+  return rows.map(row => {
+    const d = map[row['Scryfall ID']] || {};
+    const isFoil = ['foil', '1', 'true', 'yes'].includes((row['Foil'] || '').toLowerCase());
+    const market_price = isFoil ? (d.price_f || d.price_nf || '') : (d.price_nf || '');
+    const setCode = row['Set Code'] || row['Set code'] || row['set_code'] || row['Set'] || d.set_code || '';
+    const setName = row['Set Name'] || row['Set name'] || row['set_name'] || d.set_name || '';
+    return {
+      ...row,
+      'Set Code': setCode,
+      'Set Name': setName,
+      market_price,
+      edhrec_rank: d.rank != null ? d.rank : '',
+      edhrec_tier: d.tier || '',
+    };
+  });
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let stacks = [];    // [{id, filename, label, rows}]
+let resultRows = [];
+
+const OUTPUT_COLS = [
+  'Name', 'Stack', 'Set Code', 'Set Name', 'Foil', 'Condition', 'Quantity',
+  'Scryfall ID', 'market_price', 'edhrec_rank', 'edhrec_tier'
+];
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+
+function tierBadge(tier) {
+  if (!tier) return '<span style="color:#a09d98">—</span>';
+  return `<span class="tier tier-${tier}">&#9650;${tier}</span>`;
+}
+
+function renderStacks() {
+  const list = document.getElementById('stackList');
+  list.innerHTML = stacks.map((st, i) => `
+    <div class="stack-item" data-id="${st.id}">
+      <span class="stack-num">#${i + 1}</span>
+      <input class="stack-input" value="${escAttr(st.label)}" placeholder="Stack label..." data-id="${st.id}">
+      <span class="stack-count">${st.rows.length} cards</span>
+      <button class="remove-btn" data-id="${st.id}" title="Remove">&#215;</button>
+    </div>
+  `).join('');
+
+  document.getElementById('actionArea').style.display = stacks.length ? 'flex' : 'none';
+
+  const total = stacks.reduce((s, st) => s + st.rows.length, 0);
+  document.getElementById('processBtn').textContent =
+    `Process ${total} card${total !== 1 ? 's' : ''} across ${stacks.length} stack${stacks.length !== 1 ? 's' : ''}`;
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function setProgress(pct, msg, state) {
+  const wrap = document.getElementById('progressWrap');
+  const bar = document.getElementById('progressBar');
+  const msgEl = document.getElementById('progressMsg');
+  wrap.classList.remove('hidden');
+  bar.style.width = pct + '%';
+  bar.className = 'progress-bar' + (state === 'done' ? ' done' : state === 'error' ? ' error' : '');
+  msgEl.textContent = msg;
+}
+
+function showResults(rows) {
+  const tc = { '500': 0, '750': 0, '1000': 0 };
+  let priced = 0;
+  rows.forEach(r => {
+    if (r.edhrec_tier) tc[r.edhrec_tier]++;
+    if (r.market_price) priced++;
+  });
+
+  document.getElementById('statsGrid').innerHTML = [
+    { label: 'total cards', val: rows.length },
+    { label: 'priced', val: priced },
+    { label: '&#9650;500 (cEDH staple)', val: tc['500'] },
+    { label: '&#9650;750 (high-play)', val: tc['750'] },
+    { label: '&#9650;1000 (competitive)', val: tc['1000'] },
+  ].map(s => `
+    <div class="stat-card">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.val}</div>
+    </div>
+  `).join('');
+
+  const preview = rows.slice(0, 8);
+  document.getElementById('previewBody').innerHTML = preview.map(r => `
+    <tr>
+      <td title="${escAttr(r.Name)}">${escAttr(r.Name)}</td>
+      <td>${escAttr(r.Stack || '')}</td>
+      <td>${escAttr(r.Condition || '')}</td>
+      <td>${r.market_price ? '$' + parseFloat(r.market_price).toFixed(2) : '—'}</td>
+      <td>${r.edhrec_rank !== '' ? r.edhrec_rank : '—'}</td>
+      <td>${tierBadge(r.edhrec_tier)}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('tableFooter').textContent =
+    `showing ${preview.length} of ${rows.length} rows`;
+
+  document.getElementById('results').classList.remove('hidden');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Event wiring ──────────────────────────────────────────────────────────────
+
+function addFiles(files) {
+  Array.from(files)
+    .filter(f => f.name.toLowerCase().endsWith('.csv'))
+    .forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const rows = parseCSV(e.target.result);
+        if (!rows.length) return;
+        stacks.push({
+          id: Date.now() + '-' + Math.random(),
+          filename: file.name,
+          label: file.name.replace(/\.csv$/i, ''),
+          rows,
+        });
+        renderStacks();
+      };
+      reader.readAsText(file);
+    });
+}
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  addFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e => addFiles(e.target.files));
+
+document.getElementById('stackList').addEventListener('input', e => {
+  if (e.target.classList.contains('stack-input')) {
+    const id = e.target.dataset.id;
+    const st = stacks.find(s => s.id === id);
+    if (st) st.label = e.target.value;
+  }
+});
+
+document.getElementById('stackList').addEventListener('click', e => {
+  if (e.target.classList.contains('remove-btn')) {
+    const id = e.target.dataset.id;
+    stacks = stacks.filter(s => s.id !== id);
+    renderStacks();
+  }
+});
+
+document.getElementById('processBtn').addEventListener('click', async () => {
+  if (!stacks.length) return;
+
+  document.getElementById('processBtn').disabled = true;
+  document.getElementById('results').classList.add('hidden');
+
+  setProgress(5, 'Combining stacks...');
+
+  const combined = stacks.flatMap(st => st.rows.map(r => ({ ...r, Stack: st.label })));
+
+  try {
+    const enriched = await enrichWithScryfall(combined, (pct, msg) => setProgress(pct, msg));
+    setProgress(100, `Done — ${enriched.length} cards enriched`, 'done');
+    resultRows = enriched;
+    showResults(enriched);
+  } catch (err) {
+    setProgress(100, 'Error: ' + err.message, 'error');
+  }
+
+  document.getElementById('processBtn').disabled = false;
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  if (!resultRows.length) return;
+  downloadCSV(toCSV(OUTPUT_COLS, resultRows), 'collection.csv');
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  stacks = [];
+  resultRows = [];
+  renderStacks();
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('progressWrap').classList.add('hidden');
+  fileInput.value = '';
+});
+</script>
+</body>
+</html>
