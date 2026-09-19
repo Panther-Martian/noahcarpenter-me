@@ -1,22 +1,31 @@
 # noahcarpenter.me
 
-Personal site and projects. Plain static HTML with one Cloudflare Pages
-Function for the shared leaderboard. No build step, no dependencies — do not
-add a `package.json` unless you also configure the build, or deploys break.
+Personal site and projects. Plain static HTML served by a Cloudflare **Worker**,
+with one dynamic route for the shared leaderboard. No build step, no
+dependencies — do not add a `package.json` unless you also configure the build,
+or deploys break.
+
+This is a Worker, not a Pages project. The Pages-only `functions/` directory
+convention does **not** apply here; routes are wired explicitly in
+`worker.js`. Configuration lives in `wrangler.jsonc`.
 
 ## Structure
 
-- `index.html` — homepage
-- `404.html` — not-found page
-- `noah.webp` — header artwork
-- `map-slam.html` — Map Slam (tap each state, name it)
-- `list-race.html` — List Race (type all 50 from memory)
-- `game.css` — shared styling for both games
-- `game.js` — shared helpers, the name gate, the leaderboard client
-- `states.js` — state names + SVG paths (Map Slam only, ~107KB)
-- `state-names.js` — just the 50 names (List Race only)
-- `functions/api/scores.js` — leaderboard API
+- `wrangler.jsonc` — Worker config: entry point, assets directory, KV binding
+- `worker.js` — entry point; routes `/api/scores`, serves everything else from `public/`
+- `src/scores.js` — leaderboard API handlers
+- `public/` — everything served as static files:
+  - `index.html` — homepage
+  - `404.html` — not-found page
+  - `noah.webp` — header artwork
+  - `map-slam.html` — Map Slam (tap each state, name it)
+  - `list-race.html` — List Race (type all 50 from memory)
+  - `game.css` — shared styling for both games
+  - `game.js` — shared helpers, the name gate, the leaderboard client
+  - `states.js` — state names + SVG paths (Map Slam only, ~107KB)
+  - `state-names.js` — just the 50 names (List Race only)
 - `test/scores.test.mjs` — tests for the leaderboard API
+- `test/worker.test.mjs` — tests for request routing
 
 ## The leaderboard
 
@@ -25,12 +34,10 @@ game (`board:map-slam`, `board:list-race`), each holding the top 10.
 
 ### One-time setup
 
-1. ~~Create the KV namespace.~~ Done — `noah-scores`, id
-   `6e18c86b2347477d8413da094cbd0eca`.
-2. Your Pages project → **Settings** → **Bindings** → **Add** → **KV namespace**.
-   - Variable name: `SCORES`  ← must be exactly this
-   - KV namespace: `noah-scores`
-3. Add it for both **Production** and **Preview**, then redeploy.
+Both are already done. The namespace `noah-scores`
+(id `6e18c86b2347477d8413da094cbd0eca`) exists, and the binding is declared in
+`wrangler.jsonc`, so it is recreated on every deploy rather than depending on
+dashboard state.
 
 Until that binding exists the API returns `leaderboard-unconfigured` and the
 games display "Leaderboard isn't switched on yet." They stay fully playable —
@@ -59,6 +66,7 @@ finishing in the same instant could drop one entry. Fine at this scale.
 
 ```bash
 node test/scores.test.mjs
+node test/worker.test.mjs
 ```
 
 There is deliberately no `package.json` and no lockfile. Cloudflare Pages
@@ -72,8 +80,8 @@ name shaping, bad input, and the unconfigured case. No network, no deploy.
 
 ## Adding a project
 
-1. Drop the project's HTML file in the root (or a folder with its own `index.html`).
-2. Add a card to the `<ul class="projects">` grid in `index.html`, above the
+1. Drop the project's HTML file in `public/` (or a folder under it with its own `index.html`).
+2. Add a card to the `<ul class="projects">` grid in `public/index.html`, above the
    `<li class="empty">` placeholder:
 
 ```html
@@ -94,13 +102,15 @@ column on a phone to two or three as you add them. Delete the
 ## Local preview
 
 ```bash
-python3 -m http.server 4173
+npx wrangler dev
 ```
 
-Then open http://localhost:4173. The leaderboard will report itself
-unavailable, since `/api/scores` only exists on Cloudflare. To exercise the
-API locally instead:
+That serves `public/` and the API together with a local KV. For static-only
+checks without wrangler:
 
 ```bash
-npx wrangler pages dev . --kv SCORES
+cd public && python3 -m http.server 4173
 ```
+
+The leaderboard will report itself unavailable there, since `/api/scores` needs
+the Worker.

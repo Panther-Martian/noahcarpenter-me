@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 // treats it as pure static + Functions and never tries to install or build.
 // That leaves Node seeing functions/api/scores.js as CommonJS, so load it as
 // a module by hand instead of importing it directly.
-const src = await readFile(new URL('../functions/api/scores.js', import.meta.url), 'utf8');
+const src = await readFile(new URL('../src/scores.js', import.meta.url), 'utf8');
 const { onRequestGet, onRequestPost } =
   await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
 

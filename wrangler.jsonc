@@ -1,0 +1,20 @@
+{
+  // Static site + one API route. No build step, no dependencies.
+  "name": "noahcarpenter-me",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-18",
+
+  // Everything in public/ is served as-is; unmatched paths fall through to
+  // the Worker, which is how /api/scores gets reached.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  },
+
+  // Shared leaderboard storage. Declared here so the binding is reproducible
+  // rather than living only in the dashboard.
+  "kv_namespaces": [
+    { "binding": "SCORES", "id": "6e18c86b2347477d8413da094cbd0eca" }
+  ]
+}
