@@ -23,6 +23,7 @@ convention does **not** apply here; routes are wired explicitly in
   - `list-race.html` — List Race (type all 50 from memory)
   - `collection-organizer.html` — MTG Card Organizer, "Single List" tab (the entry point)
   - `stack-organizer.html` — MTG Card Organizer, "Multiple Lists" tab
+  - `cardkingdom-tool.html` — MTG Card Organizer, "CardKingdom Tool" tab
   - `game.css` — shared styling for both games
   - `game.js` — shared helpers, the name gate, the leaderboard client
   - `states.js` — state names + SVG paths (Map Slam only, ~107KB)
@@ -89,16 +90,27 @@ nothing with the rest of the site — no `game.css`, no `game.js`, no site
 favicon. Leave them that way unless asked.
 
 They are presented as one project, **MTG Card Organizer**, with "Single List"
-as the entry point and a tab bar switching to "Multiple Lists". The filenames
-still say collection/stack; only the visible labels changed. They stay two separate pages
+as the entry point and a tab bar switching to "Multiple Lists" and
+"CardKingdom Tool". The filenames still say collection/stack; only the visible
+labels changed. They stay two separate pages
 because both define `#dropZone` and `#fileInput`; merging them into one
 document would mean renaming ids and rewiring both scripts. The only edits to
 either file are the tab CSS, the `<nav class="tabs">` block, and the title and
 h1 — no app logic was touched.
 
-Their only runtime dependency is Scryfall's public API
-(`POST https://api.scryfall.com/cards/collection`). CSVs are supplied by the
+Their runtime dependencies are Scryfall's public API
+(`POST https://api.scryfall.com/cards/collection`) and, for the CardKingdom
+tab, `https://api.cardkingdom.com/api/v2/pricelist`. CSVs are supplied by the
 user at runtime; none are stored in this repo.
+
+`cardkingdom-tool.html` is a browser port of `ck_buylist_api.py`, not a copied
+file. Card Kingdom's pricelist is CORS-enabled, so it runs client-side with no
+proxy — but it is ~67 MB and 151k products, so the page caches it in the Cache
+API for six hours (the same window the script used). A cold run takes ~20s; a
+cached run ~1s. Cards are matched on Scryfall ID rather than name/edition, so
+printings and foils line up exactly. EDHREC ranks come from Scryfall's batch
+endpoint (only the user's cards) rather than the 140 MB oracle bulk file the
+script downloaded.
 
 ## Adding a project
 

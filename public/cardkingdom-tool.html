@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardKingdom Tool &middot; MTG Card Organizer</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f9f8;
+    --surface: #ffffff;
+    --border: #e0ddd8;
+    --border-strong: #c8c4bc;
+    --text: #1a1a18;
+    --text-muted: #6b6860;
+    --text-faint: #a09d98;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --row-hover: #f5f4f2;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.75rem 1.5rem;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+  }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Import screen ── */
+  #importScreen {
+    max-width: 580px;
+    margin: 4rem auto 0;
+    text-align: center;
+  }
+
+  .drop-zone {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    cursor: pointer;
+    background: var(--surface);
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 1rem;
+    user-select: none;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+
+  .dz-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.3;
+  }
+
+  .dz-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .dz-hint {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+  }
+
+  /* ── Progress ── */
+  #progressScreen {
+    max-width: 480px;
+    margin: 5rem auto 0;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .progress-fill.done { background: var(--success); }
+  .progress-fill.error { background: var(--danger); }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  /* ── Results screen ── */
+  #resultsScreen { display: none; }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .filename-badge {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.3rem 0.65rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.4rem 0.75rem;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    width: 220px;
+    transition: border-color 0.15s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+
+  .filter-group {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    border-radius: 5px;
+    padding: 0.3rem 0.65rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+
+  .filter-btn:hover { border-color: var(--border-strong); color: var(--text); }
+  .filter-btn.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .filter-btn.active.f500 { background: #92400e; border-color: #92400e; color: #fff; }
+  .filter-btn.active.f750 { background: #14532d; border-color: #14532d; color: #fff; }
+  .filter-btn.active.f1000 { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+
+  .spacer { flex: 1; }
+
+  .row-count {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Buttons */
+  .btn {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 7px;
+    padding: 0.42rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+  }
+
+  .btn-primary:hover { background: #1d4ed8; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    min-width: 780px;
+  }
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  th {
+    text-align: left;
+    padding: 9px 12px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    user-select: none;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+
+  th:hover { color: var(--text); }
+  th.sort-asc::after { content: ' ↑'; opacity: 0.6; }
+  th.sort-desc::after { content: ' ↓'; opacity: 0.6; }
+  th:not(.sortable) { cursor: default; }
+
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--row-hover); }
+  tr.row-valuable td { background: #dcfce7; }
+  tr.row-valuable:hover td { background: #bbf7d0; }
+
+  .col-name   { width: 24%; }
+  .col-set    { width: 8%; }
+  .col-foil   { width: 6%; }
+  .col-cond   { width: 9%; }
+  .col-qty    { width: 5%; text-align: right; }
+  .col-price  { width: 10%; text-align: right; font-family: var(--mono); }
+  .col-rank   { width: 9%; text-align: right; font-family: var(--mono); }
+  .col-tier   { width: 8%; }
+  .col-rarity { width: 8%; }
+  .col-lang   { width: 6%; }
+
+  td.col-qty, td.col-price, td.col-rank { font-family: var(--mono); font-size: 0.75rem; }
+
+  /* Tier badges */
+  .tier {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.63rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .tier-500  { background: #fef3c7; color: #92400e; }
+  .tier-750  { background: #dcfce7; color: #14532d; }
+  .tier-1000 { background: #dbeafe; color: #1e3a8a; }
+
+  .foil-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #f0f0ff;
+    color: #4338ca;
+    letter-spacing: 0.04em;
+  }
+
+  .rarity-m { color: #b45309; font-weight: 600; }
+  .rarity-r { color: #d97706; font-weight: 500; }
+  .rarity-u { color: #6b7280; }
+  .rarity-c { color: #9ca3af; }
+
+  /* Empty state */
+  .empty-row td {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-faint);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+
+  .hidden { display: none !important; }
+
+  /* Tabs linking the two organizer views. Separate pages rather than one
+     document: both apps define #dropZone and #fileInput, so merging them
+     would mean rewiring both scripts. */
+  .tabs {
+    display: flex;
+    gap: 1.25rem;
+    margin: -0.5rem 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tabs a {
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0 0 0.5rem;
+    margin-bottom: -1px;
+    text-decoration: none;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+  }
+  .tabs a:hover { color: var(--text); }
+  .tabs a[aria-current="page"] {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .lede {
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text);
+    margin: 0 0 0.6rem;
+  }
+  .lede-sub {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+    margin: 0 0 1.75rem;
+  }
+
+
+  /* CardKingdom tool additions */
+  .summary {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .stat {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 0.6rem 0.9rem;
+    min-width: 8.5rem;
+  }
+  .stat .k {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .stat .v {
+    font-size: 1.15rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    margin-top: 0.15rem;
+  }
+  .stat.money .v { color: var(--success); }
+  .col-money { text-align: right; font-variant-numeric: tabular-nums; }
+  .col-grade { text-align: center; }
+  .grade {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    color: var(--text-muted);
+  }
+  .grade.downgraded { border-color: var(--danger); color: var(--danger); }
+  .staple {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+    background: #fffbeb;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+  }
+  .zero { color: var(--text-faint); }
+  .warn-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0.6rem 0 0;
+  }
+
+</style>
+</head>
+<body>
+
+  <header>
+    <h1>MTG Card Organizer</h1>
+  </header>
+
+  <nav class="tabs">
+    <a href="collection-organizer.html">Single List</a>
+    <a href="stack-organizer.html">Multiple Lists</a>
+    <a href="cardkingdom-tool.html" aria-current="page">CardKingdom Tool</a>
+  </nav>
+
+  <div id="importScreen">
+    <p class="lede">Upload a ManaBox export and see what Card Kingdom will actually pay for it &mdash; real per-condition buylist prices, how many of each card they still want, and a CSV you can hand straight to their import tool.</p>
+    <p class="lede-sub">Matched on Scryfall ID, so printings and foils line up exactly. Cards in the EDHREC top 1000 get flagged so you don't sell a staple by accident.</p>
+    <div class="drop-zone" id="dropZone">
+      <div class="dz-icon">&#9670;</div>
+      <div class="dz-label">Drop your ManaBox CSV export here, or click to browse</div>
+      <div class="dz-hint">First run downloads Card Kingdom's pricelist (~67&nbsp;MB), then caches it for six hours</div>
+    </div>
+    <input type="file" id="fileInput" accept=".csv" style="display:none">
+  </div>
+
+  <div id="progressScreen" style="display:none">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">Starting...</div>
+  </div>
+
+  <div id="resultsScreen">
+    <div class="summary" id="summary"></div>
+
+    <div class="top-bar">
+      <span class="filename-badge" id="filenameBadge"></span>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search cards...">
+      <div class="filter-group">
+        <button class="filter-btn" data-f="all">All</button>
+        <button class="filter-btn" data-f="buying">CK buying</button>
+        <button class="filter-btn" data-f="notbuying">Not buying</button>
+        <button class="filter-btn" data-f="staple">Staples</button>
+      </div>
+      <span class="spacer"></span>
+      <span class="row-count" id="rowCount"></span>
+      <button class="btn btn-primary" id="exportBtn">Export CK CSV</button>
+      <button class="btn btn-secondary" id="newFileBtn">New file</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-name sortable"  data-col="name">Name</th>
+            <th class="col-set  sortable"  data-col="set">Set</th>
+            <th class="col-foil"           data-col="finish">Foil</th>
+            <th class="col-cond sortable"  data-col="your_condition">Your cond.</th>
+            <th class="col-grade"          data-col="ck_condition">CK grade</th>
+            <th class="col-qty  sortable"  data-col="quantity">Qty</th>
+            <th class="col-money sortable" data-col="unit_price">Unit $</th>
+            <th class="col-money sortable" data-col="total">Total $</th>
+            <th class="col-qty  sortable"  data-col="ck_qty_wanted">CK wants</th>
+            <th class="col-rank sortable"  data-col="edhrec_rank">EDHREC</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="warn-note" id="unmatchedNote"></p>
+  </div>
+
+<script>
+/* Ported from ck_buylist_api.py. Card Kingdom's pricelist is CORS-enabled, so
+   this runs entirely in the browser with no proxy. */
+
+const PRICELIST_URL = 'https://api.cardkingdom.com/api/v2/pricelist';
+const CACHE_NAME    = 'ck-pricelist-v1';
+const MAX_AGE_MS    = 6 * 3600 * 1000;   // same refresh window as the script
+const STAPLE_RANK   = 1000;
+
+// ManaBox condition -> CK grade. CK grades: NM / EX (~LP) / VG (~MP) / G (~HP)
+const CONDITION_MAP = {
+  mint: 'nm', near_mint: 'nm', nm: 'nm',
+  lightly_played: 'ex', excellent: 'ex', lp: 'ex', light_played: 'ex',
+  moderately_played: 'vg', good: 'vg', mp: 'vg', played: 'vg',
+  heavily_played: 'g', poor: 'g', hp: 'g', damaged: 'g'
+};
+
+// ── CSV helpers (same as the other tabs) ─────────────────────────────────────
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+function parseCSV(text) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const vals = parseCSVLine(line);
+    const row = {};
+    headers.forEach((h, j) => row[h] = (vals[j] || '').trim());
+    rows.push(row);
+  }
+  return rows;
+}
+function toCSV(cols, rows) {
+  const q = v => {
+    const s = String(v == null ? '' : v);
+    return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [cols.map(q).join(',')];
+  rows.forEach(r => lines.push(cols.map(c => q(r[c])).join(',')));
+  return lines.join('\n');
+}
+function downloadCSV(content, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+// ManaBox headers vary in case ("Set code" vs "Set Code"), so look up loosely.
+function field(row, name) {
+  if (row[name] != null && row[name] !== '') return row[name];
+  const want = name.toLowerCase();
+  for (const k in row) if (k.toLowerCase() === want) return row[k];
+  return '';
+}
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Screens ──────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  ['importScreen', 'progressScreen', 'resultsScreen'].forEach(s => {
+    document.getElementById(s).style.display = (s === id) ? 'block' : 'none';
+  });
+}
+function progress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+// ── Card Kingdom pricelist ───────────────────────────────────────────────────
+async function cachedPricelist() {
+  let cache = null;
+  try { cache = await caches.open(CACHE_NAME); } catch { /* private mode */ }
+
+  if (cache) {
+    const hit = await cache.match(PRICELIST_URL);
+    if (hit) {
+      const stamped = hit.headers.get('x-fetched-at');
+      const age = stamped ? Date.now() - Number(stamped) : Infinity;
+      if (age < MAX_AGE_MS) {
+        progress(35, 'Reading cached Card Kingdom pricelist...');
+        return hit.json();
+      }
+    }
+  }
+
+  progress(5, 'Downloading Card Kingdom pricelist...');
+  const res = await fetch(PRICELIST_URL);
+  if (!res.ok) throw new Error('Card Kingdom returned ' + res.status);
+
+  // Stream so the bar reflects a genuinely long download
+  const total = Number(res.headers.get('content-length')) || 0;
+  const reader = res.body && res.body.getReader ? res.body.getReader() : null;
+  let text;
+  if (reader) {
+    const chunks = []; let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); got += value.length;
+      const pct = total ? 5 + (got / total) * 25 : 5 + Math.min(got / 7e7, 1) * 25;
+      progress(pct, `Downloading Card Kingdom pricelist... ${(got / 1e6).toFixed(0)} MB`);
+    }
+    text = new TextDecoder().decode(await new Blob(chunks).arrayBuffer());
+  } else {
+    text = await res.text();
+  }
+
+  if (cache) {
+    try {
+      await cache.put(PRICELIST_URL, new Response(text, {
+        headers: { 'Content-Type': 'application/json', 'x-fetched-at': String(Date.now()) }
+      }));
+    } catch { /* over quota; just don't cache */ }
+  }
+  progress(32, 'Parsing pricelist...');
+  return JSON.parse(text);
+}
+
+// Scryfall ID -> CK products (foil and non-foil share an id)
+function buildIndex(parsed) {
+  const index = new Map();
+  for (const p of (parsed.data || [])) {
+    const sid = p.scryfall_id || p.scryfallId;
+    if (!sid) continue;
+    let list = index.get(sid);
+    if (!list) { list = []; index.set(sid, list); }
+    list.push(p);
+  }
+  return index;
+}
+
+// ── Matching, ported one-for-one from the script ─────────────────────────────
+const toBool  = v => ['true', '1', 'yes', 'foil'].includes(String(v).trim().toLowerCase());
+const toFloat = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+const toInt   = (v, d = 0) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : d; };
+
+function normalizeFinish(v) {
+  const s = String(v || '').trim().toLowerCase();
+  if (['foil', 'true', 'yes', '1'].includes(s)) return 'foil';
+  if (s === 'etched') return 'etched';
+  return 'normal';
+}
+function pickProduct(candidates, finish) {
+  const wantFoil = finish === 'foil' || finish === 'etched';
+  for (const p of candidates) if (toBool(p.is_foil) === wantFoil) return p;
+  return candidates[0] || null;
+}
+function conditionPrice(product, key) {
+  const cv = product.condition_values || {};
+  return { price: toFloat(cv[key + '_price']), qty: toInt(cv[key + '_qty']) };
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let allRows = [], filteredRows = [], unmatched = [];
+let filterMode = 'all', searchTerm = '', sortCol = null, sortDir = 'asc';
+let currentFilename = 'collection';
+
+async function enrichRanks(rows) {
+  // Only the cards in the file, 75 at a time — same approach as the other tabs.
+  const ids = [...new Set(rows.map(r => r.scryfall_id).filter(Boolean))];
+  const ranks = new Map();
+  const BATCH = 75;
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    try {
+      const res = await fetch('https://api.scryfall.com/cards/collection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifiers: batch.map(id => ({ id })) })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        (data.data || []).forEach(c => { if (c.edhrec_rank != null) ranks.set(c.id, c.edhrec_rank); });
+      }
+    } catch { /* ranks are a nicety; keep going */ }
+    progress(70 + ((i + BATCH) / Math.max(ids.length, 1)) * 25,
+             `Checking EDHREC ranks... ${Math.min(i + BATCH, ids.length)} / ${ids.length}`);
+  }
+  return ranks;
+}
+
+async function handleFile(file) {
+  if (!file || !file.name.toLowerCase().endsWith('.csv')) return;
+  currentFilename = file.name.replace(/\.csv$/i, '');
+  showScreen('progressScreen');
+  progress(2, 'Reading CSV...');
+
+  try {
+    const rows = parseCSV(await file.text());
+    if (!rows.length) throw new Error('That CSV had no rows.');
+
+    const parsed = await cachedPricelist();
+    progress(45, 'Indexing ' + (parsed.data || []).length.toLocaleString() + ' products...');
+    const index = buildIndex(parsed);
+
+    progress(55, 'Matching your cards...');
+    const matched = [];
+    unmatched = [];
+
+    for (const row of rows) {
+      const name = String(field(row, 'Name')).trim();
+      const sid  = String(field(row, 'Scryfall ID')).trim();
+      const qty  = toInt(field(row, 'Quantity'), 1) || 1;
+      const finish = normalizeFinish(field(row, 'Foil'));
+      const condRaw = (String(field(row, 'Condition')) || 'near_mint').trim().toLowerCase().replace(/ /g, '_');
+      const setCode = String(field(row, 'Set Code')).trim();
+
+      if (!sid) { unmatched.push([name, 'no Scryfall ID in CSV']); continue; }
+      const candidates = index.get(sid);
+      if (!candidates) { unmatched.push([name, 'not in CK pricelist']); continue; }
+      const product = pickProduct(candidates, finish);
+      if (!product) { unmatched.push([name, 'no matching CK product']); continue; }
+
+      let condKey = CONDITION_MAP[condRaw] || 'nm';
+      let { price: unit, qty: wanted } = conditionPrice(product, condKey);
+      let downgraded = false;
+
+      // CK often posts only NM for cheap cards; fall back like the script does
+      if (unit <= 0) {
+        for (const fb of ['nm', 'ex', 'vg', 'g']) {
+          if (fb === condKey) continue;
+          const r = conditionPrice(product, fb);
+          if (r.price > 0) { unit = r.price; wanted = r.qty; condKey = fb; downgraded = true; break; }
+        }
+      }
+
+      matched.push({
+        name, set: setCode, finish,
+        your_condition: condRaw, ck_condition: condKey, downgraded,
+        quantity: qty,
+        unit_price: Math.round(unit * 100) / 100,
+        total: Math.round(unit * qty * 100) / 100,
+        ck_qty_wanted: wanted,
+        ck_url: product.url || '',
+        ck_name: product.name || name,
+        ck_variation: product.variation || '',
+        ck_edition: product.edition || '',
+        ck_is_foil: toBool(product.is_foil),
+        scryfall_id: sid,
+        edhrec_rank: '', is_staple: false
+      });
+    }
+
+    const ranks = await enrichRanks(matched);
+    matched.forEach(r => {
+      const rank = ranks.get(r.scryfall_id);
+      if (rank != null) { r.edhrec_rank = rank; r.is_staple = rank <= STAPLE_RANK; }
+    });
+
+    matched.sort((a, b) => b.total - a.total);
+    allRows = matched;
+    progress(100, 'Done');
+    setTimeout(() => { showScreen('resultsScreen'); renderSummary(); applyFilters(); }, 300);
+  } catch (err) {
+    progress(100, 'Failed: ' + err.message);
+    setTimeout(() => showScreen('importScreen'), 2500);
+  }
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────────
+const money = n => '$' + Number(n || 0).toFixed(2);
+
+function renderSummary() {
+  const buying = allRows.filter(r => r.unit_price > 0);
+  const offer  = buying.reduce((s, r) => s + r.total, 0);
+  const cards  = buying.reduce((s, r) => s + r.quantity, 0);
+  const staples = allRows.filter(r => r.is_staple).length;
+  document.getElementById('summary').innerHTML = `
+    <div class="stat money"><div class="k">Total offer</div><div class="v">${money(offer)}</div></div>
+    <div class="stat"><div class="k">Cards CK wants</div><div class="v">${cards.toLocaleString()}</div></div>
+    <div class="stat"><div class="k">Lines matched</div><div class="v">${allRows.length.toLocaleString()}</div></div>
+    <div class="stat"><div class="k">Staples flagged</div><div class="v">${staples.toLocaleString()}</div></div>`;
+  const note = document.getElementById('unmatchedNote');
+  note.textContent = unmatched.length
+    ? `${unmatched.length} row${unmatched.length === 1 ? '' : 's'} could not be matched (no Scryfall ID, or not in Card Kingdom's pricelist).`
+    : '';
+}
+
+function applyFilters() {
+  const q = searchTerm.toLowerCase();
+  filteredRows = allRows.filter(r => {
+    if (filterMode === 'buying'    && !(r.unit_price > 0)) return false;
+    if (filterMode === 'notbuying' &&  (r.unit_price > 0)) return false;
+    if (filterMode === 'staple'    && !r.is_staple) return false;
+    if (q && !r.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (sortCol) {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    filteredRows.sort((a, b) => {
+      const x = a[sortCol], y = b[sortCol];
+      const nx = Number(x), ny = Number(y);
+      if (Number.isFinite(nx) && Number.isFinite(ny) && x !== '' && y !== '') return (nx - ny) * dir;
+      return String(x).localeCompare(String(y)) * dir;
+    });
+  }
+  renderRows();
+}
+
+function renderRows() {
+  const tb = document.getElementById('tbody');
+  document.getElementById('rowCount').textContent =
+    `${filteredRows.length.toLocaleString()} of ${allRows.length.toLocaleString()}`;
+  if (!filteredRows.length) {
+    tb.innerHTML = '<tr><td colspan="10" class="empty-row">No cards match the current filter</td></tr>';
+    return;
+  }
+  tb.innerHTML = filteredRows.map(r => `
+    <tr>
+      <td class="col-name">${esc(r.name)}${r.is_staple ? ' <span class="staple">staple</span>' : ''}</td>
+      <td class="col-set">${esc(r.set)}</td>
+      <td class="col-foil">${r.finish !== 'normal' ? '<span class="foil-badge">' + esc(r.finish) + '</span>' : ''}</td>
+      <td class="col-cond">${esc(r.your_condition)}</td>
+      <td class="col-grade"><span class="grade${r.downgraded ? ' downgraded' : ''}">${r.ck_condition.toUpperCase()}</span></td>
+      <td class="col-qty">${r.quantity}</td>
+      <td class="col-money${r.unit_price > 0 ? '' : ' zero'}">${r.unit_price > 0 ? money(r.unit_price) : '--'}</td>
+      <td class="col-money${r.total > 0 ? '' : ' zero'}">${r.total > 0 ? money(r.total) : '--'}</td>
+      <td class="col-qty">${r.ck_qty_wanted || 0}</td>
+      <td class="col-rank">${r.edhrec_rank === '' ? '' : r.edhrec_rank.toLocaleString()}</td>
+    </tr>`).join('');
+}
+
+// ── Events ───────────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterMode = btn.dataset.f;
+    applyFilters();
+  });
+});
+document.querySelector('.filter-btn[data-f="all"]').classList.add('active');
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchTerm = e.target.value.trim();
+  applyFilters();
+});
+
+document.querySelectorAll('th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = col; sortDir = 'asc'; }
+    document.querySelectorAll('th.sortable').forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
+    th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    applyFilters();
+  });
+});
+
+// First four columns are exactly what Card Kingdom's import tool expects;
+// everything after is ignored by them and kept for your own review.
+const EXPORT_COLS = ['Title', 'Edition', 'Foil', 'Quantity', 'unit_price', 'total',
+                     'ck_condition', 'your_condition', 'ck_qty_wanted', 'is_staple',
+                     'edhrec_rank', 'ck_url'];
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const src = filteredRows.length < allRows.length ? filteredRows : allRows;
+  const rows = src.map(r => {
+    let title = r.ck_name;
+    if (r.ck_variation && !title.toLowerCase().includes(r.ck_variation.toLowerCase())) {
+      title = `${title} (${r.ck_variation})`;
+    }
+    return {
+      Title: title,
+      Edition: r.ck_edition,
+      Foil: r.ck_is_foil ? 1 : 0,
+      Quantity: r.quantity,
+      unit_price: r.unit_price.toFixed(2),
+      total: r.total.toFixed(2),
+      ck_condition: r.ck_condition.toUpperCase(),
+      your_condition: r.your_condition,
+      ck_qty_wanted: r.ck_qty_wanted,
+      is_staple: r.is_staple ? 'yes' : '',
+      edhrec_rank: r.edhrec_rank,
+      ck_url: r.ck_url
+    };
+  });
+  const suffix = filteredRows.length < allRows.length ? '_filtered' : '';
+  downloadCSV(toCSV(EXPORT_COLS, rows), currentFilename + suffix + '_cardkingdom.csv');
+});
+
+document.getElementById('newFileBtn').addEventListener('click', () => {
+  allRows = []; filteredRows = []; unmatched = [];
+  fileInput.value = '';
+  showScreen('importScreen');
+});
+
+showScreen('importScreen');
+</script>
+</body>
+</html>
