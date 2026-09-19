@@ -21,8 +21,8 @@ convention does **not** apply here; routes are wired explicitly in
   - `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png` — site icons
   - `map-slam.html` — Map Slam (tap each state, name it)
   - `list-race.html` — List Race (type all 50 from memory)
-  - `collection-organizer.html` — ManaBox CSV → Scryfall-enriched collection
-  - `stack-organizer.html` — many ManaBox CSVs → one enriched stack sheet
+  - `collection-organizer.html` — MTG Card Organizer, Collection tab (the entry point)
+  - `stack-organizer.html` — MTG Card Organizer, Stack tab
   - `game.css` — shared styling for both games
   - `game.js` — shared helpers, the name gate, the leaderboard client
   - `states.js` — state names + SVG paths (Map Slam only, ~107KB)
@@ -84,9 +84,16 @@ name shaping, bad input, and the unconfigured case. No network, no deploy.
 ## The card organizers
 
 `collection-organizer.html` and `stack-organizer.html` are self-contained
-single-file apps copied in from elsewhere, byte for byte. They have their own
-look and share nothing with the rest of the site — no `game.css`, no
-`game.js`, no site favicon. Leave them that way unless asked.
+single-file apps copied in from elsewhere. They have their own look and share
+nothing with the rest of the site — no `game.css`, no `game.js`, no site
+favicon. Leave them that way unless asked.
+
+They are presented as one project, **MTG Card Organizer**, with Collection as
+the entry point and a tab bar switching to Stack. They stay two separate pages
+because both define `#dropZone` and `#fileInput`; merging them into one
+document would mean renaming ids and rewiring both scripts. The only edits to
+either file are the tab CSS, the `<nav class="tabs">` block, and the title and
+h1 — no app logic was touched.
 
 Their only runtime dependency is Scryfall's public API
 (`POST https://api.scryfall.com/cards/collection`). CSVs are supplied by the

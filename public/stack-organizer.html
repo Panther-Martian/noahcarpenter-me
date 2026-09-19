@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stack Organizer</title>
+<title>Stack · MTG Card Organizer</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -319,14 +319,45 @@
   }
 
   .hidden { display: none !important; }
+
+  /* Tabs linking the two organizer views. Separate pages rather than one
+     document: both apps define #dropZone and #fileInput, so merging them
+     would mean rewiring both scripts. */
+  .tabs {
+    display: flex;
+    gap: 1.25rem;
+    margin: -0.5rem 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tabs a {
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0 0 0.5rem;
+    margin-bottom: -1px;
+    text-decoration: none;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+  }
+  .tabs a:hover { color: var(--text); }
+  .tabs a[aria-current="page"] {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Stack Organizer</h1>
+    <h1>MTG Card Organizer</h1>
     <div class="subtitle">mtg collection · manabox csv → enriched stack sheet</div>
   </header>
+
+  <nav class="tabs">
+    <a href="collection-organizer.html">Collection</a>
+    <a href="stack-organizer.html" aria-current="page">Stack</a>
+  </nav>
+
 
   <!-- Drop zone -->
   <div class="drop-zone" id="dropZone">
