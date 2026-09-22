@@ -97,6 +97,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .board .empty{color:var(--muted)}
 .board tr.you td{color:var(--pink);font-weight:700}
 
+/* On the name screen the board sits under the centred gate card, so centre it
+   too. During play it stays left-aligned with the buttons above it. */
+body.gating .board{margin-left:auto;margin-right:auto}
+
 /* ---------- Win / error modal ---------- */
 .win{position:fixed;inset:0;background:rgba(43,27,90,.6);display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
 .win.show{display:flex}

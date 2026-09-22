@@ -79,11 +79,13 @@ svg{display:block;width:100%;height:auto}
     </div>
     <p class="hint" id="hint">Tiny East Coast states have their own little boxes out in the ocean. The clock starts on your first tap, and you can tap a named state to change your answer.</p>
     <div class="row"><button class="submit" id="submit" disabled>Submit all 50</button><button id="reset">Start over</button></div>
-    <section class="board">
-      <h3>State Slam leaderboard</h3>
-      <table><tbody id="board"><tr><td class="empty">Loading&hellip;</td></tr></tbody></table>
-    </section>
   </div>
+
+  <!-- Outside #gameArea so it is visible on the name screen too -->
+  <section class="board">
+    <h3>State Slam leaderboard</h3>
+    <table><tbody id="board"><tr><td class="empty">Loading&hellip;</td></tr></tbody></table>
+  </section>
 </main>
 
 <div class="sheet" id="sheet" role="dialog" aria-label="Name this state">
@@ -278,9 +280,12 @@ function renderBoard(res){
 
 updateCount();
 gate = initGate({
-  onStart: async name => { player = name; renderBoard(await Board.load(GAME)); },
+  onStart: name => { player = name; },
   onRename: name => { player = name; }
 });
+
+// The board shows from the name screen on, so fetch it straight away.
+(async () => renderBoard(await Board.load(GAME)))();
 </script>
 </body>
 </html>

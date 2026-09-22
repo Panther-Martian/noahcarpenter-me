@@ -62,11 +62,13 @@ ol.lrace li.ok .lnum{background:var(--right);color:#2B1B5A}
     </div>
     <ol class="lrace" id="lList"></ol>
     <div class="row"><button class="submit" id="lSubmit">Submit answers</button><button id="lReset">Start over</button></div>
-    <section class="board">
-      <h3>State Race leaderboard</h3>
-      <table><tbody id="lBoard"><tr><td class="empty">Loading&hellip;</td></tr></tbody></table>
-    </section>
   </div>
+
+  <!-- Outside #gameArea so it is visible on the name screen too -->
+  <section class="board">
+    <h3>State Race leaderboard</h3>
+    <table><tbody id="lBoard"><tr><td class="empty">Loading&hellip;</td></tr></tbody></table>
+  </section>
 </main>
 
 <div class="win" id="lModal" role="dialog" aria-modal="true">
@@ -186,9 +188,12 @@ function renderBoard(res){
 }
 
 gate = initGate({
-  onStart: async name => { player = name; inputs[0].focus(); renderBoard(await Board.load(GAME)); },
+  onStart: name => { player = name; inputs[0].focus(); },
   onRename: name => { player = name; }
 });
+
+// The board shows from the name screen on, so fetch it straight away.
+(async () => renderBoard(await Board.load(GAME)))();
 </script>
 </body>
 </html>

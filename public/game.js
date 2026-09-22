@@ -40,11 +40,13 @@ function initGate({ onStart, onRename }){
 
   const show = () => {
     gate.hidden = false; game.hidden = true; bar.hidden = true;
+    document.body.classList.add("gating");
     input.value = "";
     input.focus();
   };
   const hide = name => {
     gate.hidden = true; game.hidden = false; bar.hidden = false;
+    document.body.classList.remove("gating");
     label.textContent = name;
   };
 
