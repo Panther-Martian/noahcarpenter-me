@@ -25,6 +25,7 @@ convention does **not** apply here; routes are wired explicitly in
   - `stack-organizer.html` — MTG Card Organizer, "Combine Multiple Lists" tab
   - `cardkingdom-tool.html` — MTG Card Organizer, "CardKingdom Tool" tab
   - `skull-cards.webp` — footer art on the three organizer tabs
+  - `plant-maps.html` — Plant Maps (Back Yard / Front Yard)
   - `game.css` — shared styling for both games
   - `game.js` — shared helpers, the name gate, the leaderboard client
   - `states.js` — state names + SVG paths (State Slam only, ~107KB)
@@ -82,6 +83,28 @@ stay zero-config.
 
 Runs the API against an in-memory stand-in for KV — ordering, the top-10 cap,
 name shaping, bad input, and the unconfigured case. No network, no deploy.
+
+## Plant Maps
+
+`plant-maps.html` is one self-contained page with in-page tabs for Back Yard
+and Front Yard — not separate files, because both yards are the same UI over
+different data.
+
+Everything lives in two structures near the top of its script:
+
+- `SPECIES` — one entry per plant kind: name, latin, group, water level, a
+  12-slot `prune` array (`''` none, `'on'` main window, `'lite'` touch-up),
+  and the when/how/watering text.
+- `YARDS` — per yard: rows, and a `plants` array of `{c, r, x, cell, big}`
+  where `x` is the percentage across the row.
+
+**To add the front yard**, fill in `YARDS.front.rows` and `YARDS.front.plants`
+in that shape. Every species is already in `SPECIES`, the counts, legend,
+month filter and care table all derive from the data, and the empty state
+disappears on its own once `plants` is non-empty.
+
+The back yard data was ported from a Back Border Plant Map artifact; the
+counts were checked against that artifact's own legend (40 plants, 16 kinds).
 
 ## The card organizers
 

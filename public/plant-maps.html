@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plant Maps</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="Interactive plant maps for the back and front yards — what is planted where, when to prune it, and how much to water.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ffffff;
+  --ink:#1d2620;
+  --muted:#5d685f;
+  --faint:#8b958c;
+  --rule:#d5dccf;
+  --grid:#eef1ea;
+  --fence:#a89a86;
+  --lawn-ink:#4c6a39;
+  --tree:#9b1239;
+  --shrub:#b34700;
+  --shade:#0f6b35;
+  --flower:#5a22b0;
+  --on:#2d6a47;
+  --lite:#b9d6c1;
+  --off:#d5dccf;
+  --now:#c2410c;
+  --w-low:#c9a24a; --w-mod:#4f8fb8; --w-reg:#1f5f8f;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:13px/1.45 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+.page{max-width:1120px;margin:0 auto;padding:1.75rem 1.5rem 3rem}
+h1,h2,h3{font-family:"Young Serif",Georgia,serif;font-weight:400;margin:0;text-wrap:balance}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+
+.back{display:inline-block;font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:18px}
+.back:hover{color:var(--ink)}
+
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px 32px;flex-wrap:wrap;
+  border-bottom:1.5px solid var(--ink);padding-bottom:12px}
+.eyebrow{font:500 10.5px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+h1{font-size:32px;line-height:1.05}
+.facts{display:flex;gap:22px;font-variant-numeric:tabular-nums}
+.facts div{display:flex;flex-direction:column;align-items:flex-end}
+.facts b{font:400 24px/1 "Young Serif",Georgia,serif}
+.facts span{font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-top:4px}
+
+/* tabs */
+.tabs{display:flex;gap:1.5rem;margin:0 0 1.5rem;border-bottom:1px solid var(--rule)}
+.tabs button{
+  appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+  font:600 12px/1 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);padding:14px 0 10px;margin-bottom:-1px;cursor:pointer;
+}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--ink)}
+.tabs button:focus-visible{outline:2px solid var(--on);outline-offset:3px}
+
+/* controls */
+.controls{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-bottom:6px}
+.clabel{font:500 10px/1 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.months-pick{display:flex;gap:3px}
+.months-pick button{
+  appearance:none;width:26px;height:24px;border:1px solid var(--off);background:transparent;border-radius:3px;
+  font:500 10px/1 "IBM Plex Mono",monospace;color:var(--muted);cursor:pointer;padding:0;
+}
+.months-pick button:hover{border-color:var(--ink);color:var(--ink)}
+.months-pick button[aria-pressed="true"]{background:var(--on);border-color:var(--on);color:#fff;font-weight:600}
+.months-pick button:focus-visible{outline:2px solid var(--on);outline-offset:2px}
+.btn{
+  appearance:none;border:1px solid var(--rule);background:transparent;border-radius:4px;cursor:pointer;
+  font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);padding:7px 11px;
+}
+.btn:hover{border-color:var(--ink);color:var(--ink)}
+.btn:focus-visible{outline:2px solid var(--on);outline-offset:2px}
+.btn.now{border-color:var(--now);color:var(--now)}
+.status{font-size:11.5px;color:var(--muted);min-height:1.3em;margin:0 0 10px}
+.status b{color:var(--ink)}
+
+/* map */
+.mapwrap{overflow-x:auto;padding-bottom:4px}
+.fence{margin-left:84px;height:12px;min-width:816px;border-top:2px solid var(--fence);position:relative}
+.fence::after{content:"Fence";position:absolute;left:2px;top:-16px;
+  font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--fence)}
+.map{min-width:900px}
+.colrow{display:grid;grid-template-columns:84px repeat(25,1fr)}
+.colhead{text-align:center;font:500 11px/1 "IBM Plex Mono",monospace;color:var(--faint);padding:0 0 6px}
+.mrow{display:grid;grid-template-columns:84px 1fr;border-bottom:1px solid var(--rule)}
+.mrow:last-child{border-bottom:0}
+.rowhead{display:flex;align-items:center;gap:7px;padding-right:8px}
+.rowhead b{font:400 22px/1 "Young Serif",Georgia,serif;width:18px}
+.rowhead span{font-size:11px;line-height:1.15;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.track{position:relative;height:78px}
+.vline{position:absolute;top:0;bottom:0;width:0;border-left:1px solid var(--grid)}
+.lawn{margin-left:84px;min-width:816px;border-top:2px dashed var(--lawn-ink);color:var(--lawn-ink);
+  font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;padding:5px 0 0 2px}
+
+/* plant markers */
+.plant{
+  position:absolute;top:50%;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  appearance:none;background:none;border:0;padding:0;cursor:pointer;
+  transition:opacity .15s, transform .12s;
+}
+.plant i{font:400 10px/1 "IBM Plex Mono",monospace;font-style:normal;color:var(--faint)}
+.disc{
+  --c:var(--ink);
+  display:grid;place-items:center;width:31px;height:31px;border-radius:50%;
+  background:var(--c);color:#fff;border:1.5px solid var(--c);
+  font:700 11.5px/1 "IBM Plex Mono",monospace;letter-spacing:.02em;
+}
+.disc.big{width:39px;height:39px;font-size:13px;border-width:2.5px;
+  box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--c)}
+.plant:has(.big){gap:8px}
+.g-tree{--c:var(--tree)} .g-shrub{--c:var(--shrub)}
+.g-shade{--c:var(--shade)} .g-flower{--c:var(--flower)}
+
+.plant:hover{transform:translate(-50%,-50%) scale(1.12)}
+.plant:focus-visible{outline:none}
+.plant:focus-visible .disc{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink)}
+.plant.dim{opacity:.18}
+.plant.picked .disc{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink)}
+.plant.due .disc{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--now)}
+
+/* legend */
+.legend{display:grid;grid-template-columns:repeat(4,auto);justify-content:space-between;
+  gap:16px 18px;border-top:1px solid var(--rule);padding-top:16px;margin-top:14px}
+.lgroup h3{font-size:19px;display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.lgroup h3 span{font:500 12px/1 "IBM Plex Mono",monospace;color:var(--faint)}
+.lgroup ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.lgroup li button{
+  appearance:none;background:none;border:0;padding:3px 5px;margin:-3px -5px;border-radius:5px;
+  display:flex;gap:10px;align-items:center;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%;
+}
+.lgroup li button:hover{background:#f4f6f1}
+.lgroup li button:focus-visible{outline:2px solid var(--on);outline-offset:1px}
+.lgroup li button[aria-pressed="true"]{background:#eaf0e6}
+.lgroup .disc{width:30px;height:30px;font-size:11px}
+.lname{font-weight:600;font-size:13.5px;line-height:1.2}
+.count{font:500 11px "IBM Plex Mono",monospace;color:var(--faint);margin-left:2px}
+
+/* detail */
+.detail{border:1px solid var(--rule);border-radius:6px;padding:16px 18px;margin-top:18px;
+  display:grid;grid-template-columns:auto 1fr;gap:14px 16px;align-items:start}
+.detail.empty{display:block;color:var(--muted);font-size:12px;text-align:center;padding:22px}
+.detail .disc{width:44px;height:44px;font-size:15px}
+.dbody h2{font-size:22px;line-height:1.1}
+.latin{font-style:italic;color:var(--muted);font-size:12px;margin-top:2px}
+.dmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.pill{font:600 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.07em;text-transform:uppercase;
+  border:1px solid var(--rule);border-radius:99px;padding:4px 9px;color:var(--muted)}
+.drow{margin-top:12px;display:grid;grid-template-columns:118px 1fr;gap:4px 14px;font-size:12.5px}
+.dkey{font:500 9.5px/1.5 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.months{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;max-width:200px}
+.m{height:16px;border-radius:2px;box-shadow:inset 0 0 0 1px var(--off);color:var(--faint);
+  font:500 9px/16px "IBM Plex Mono",monospace;text-align:center}
+.m.on{background:var(--on);color:#fff;font-weight:600}
+.m.lite{background:var(--lite);color:var(--ink)}
+.m.thismonth{box-shadow:inset 0 0 0 1.5px var(--now)}
+.when{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* water strength marks */
+.wl{display:inline-flex;align-items:center;gap:2px;font:600 10px/1 "IBM Plex Mono",monospace;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+.wl i{width:6px;height:10px;border-radius:0 0 3px 3px;border:1.2px solid var(--w-mod);border-top:0;display:inline-block}
+.wl i:last-of-type{margin-right:5px}
+.wl-low i:nth-of-type(1){background:var(--w-low);border-color:var(--w-low)}
+.wl-low i:nth-of-type(n+2){border-color:var(--w-low);opacity:.55}
+.wl-moderate i:nth-of-type(-n+2){background:var(--w-mod)}
+.wl-moderate i:nth-of-type(3){opacity:.55}
+.wl-regular i{background:var(--w-reg);border-color:var(--w-reg)}
+
+/* care table */
+.care{margin-top:30px;border-top:1.5px solid var(--ink);padding-top:14px}
+.care h2{font-size:24px;margin-bottom:6px}
+.basics{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:var(--muted);line-height:1.4;margin:8px 0 14px}
+.basics p{margin:0;flex:1 1 260px}
+.basics b{color:var(--ink)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:860px}
+thead th{font:500 9.5px/1.2 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);text-align:left;padding:0 8px 6px;border-bottom:1.5px solid var(--ink);vertical-align:bottom}
+td{padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top;font-size:11px;line-height:1.35}
+tr.wgroup th{text-align:left;padding:10px 8px 4px;border-bottom:1.5px solid var(--ink)}
+tr.wgroup em{font:italic 400 10.5px "Public Sans",sans-serif;color:var(--muted);
+  text-transform:none;letter-spacing:0;margin-left:6px}
+tbody tr.plantrow.hit{background:#f3f7f0}
+tbody tr.plantrow.fade{opacity:.35}
+.pcol{display:flex;gap:8px;align-items:center;width:180px}
+.pcol .disc{width:24px;height:24px;font-size:9.5px}
+.pcol .lname{font-size:12px}
+.wcol{width:160px}
+.how{color:var(--ink)}
+.water{width:230px;color:var(--muted)}
+
+.foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:10.5px;
+  color:var(--faint);border-top:1px solid var(--rule);padding-top:10px;margin-top:22px}
+
+/* empty yard */
+.blank{border:1.5px dashed var(--rule);border-radius:8px;padding:48px 26px;text-align:center;margin-top:8px}
+.blank h2{font-size:22px;margin-bottom:8px}
+.blank p{color:var(--muted);font-size:12.5px;max-width:44ch;margin:0 auto}
+
+@media (max-width:760px){
+  .page{padding:1.25rem 1rem 2.5rem}
+  h1{font-size:26px}
+  .legend{grid-template-columns:1fr 1fr}
+  .detail{grid-template-columns:1fr}
+  .drow{grid-template-columns:1fr}
+}
+@media (max-width:520px){ .legend{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <a class="back" href="/">&larr; All projects</a>
+
+  <header class="head">
+    <div>
+      <div class="eyebrow" id="eyebrow">Hillsboro, OR</div>
+      <h1>Plant Maps</h1>
+    </div>
+    <div class="facts">
+      <div><b id="factPlants">&mdash;</b><span>plants</span></div>
+      <div><b id="factKinds">&mdash;</b><span>kinds</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button type="button" data-yard="back" aria-current="page">Back Yard</button>
+    <button type="button" data-yard="front">Front Yard</button>
+  </nav>
+
+  <div id="yardBody"></div>
+
+</div>
+
+<script>
+/* ────────────────────────────────────────────────────────────────────────────
+   Data. Ported from the Back Border Plant Map artifact.
+   To add the front yard, fill in YARDS.front.rows and YARDS.front.plants using
+   the same shape as `back`; every species already lives in SPECIES.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+
+const GROUPS = [
+  { key:'tree',   label:'Trees' },
+  { key:'shrub',  label:'Shrubs' },
+  { key:'shade',  label:'Ferns & hostas' },
+  { key:'flower', label:'Flowers & perennials' }
+];
+
+const WATER = {
+  regular:  { label:'Regular water',  note:'about weekly in summer' },
+  moderate: { label:'Moderate water', note:'every 10–14 days in summer' },
+  low:      { label:'Low water',      note:'rarely, once established' }
+};
+
+/* prune: 12 entries — '' none, 'on' main window, 'lite' light touch-up */
+const SPECIES = {
+  CH:{ name:'Royal Burgundy cherry', latin:'Prunus serrulata', group:'tree', water:'moderate',
+       prune:['','','','','','','on','on','','','',''], when:'Jul–Aug, in dry weather',
+       how:'Light only: remove dead, crossing, and water-sprout shoots, plus suckers below the graft. Never cut in wet months — canker gets in through rainy-season cuts.',
+       drink:'Deep soak every 10–14 days; weekly for the first 3 years.' },
+  JM:{ name:'Japanese maple', latin:'Acer palmatum', group:'tree', water:'regular',
+       prune:['on','on','','','','','lite','lite','','','',''], when:'Jan–Feb; light in Jul–Aug',
+       how:'Remove dead, crossing, and inward twigs back to a branch junction. Take no more than ⅕ of the canopy a year. Skip spring — cuts bleed sap.',
+       drink:'Deep weekly soak. Crispy brown leaf edges mean it’s thirsty.' },
+  PS:{ name:'Persimmon', latin:'Diospyros', group:'tree', water:'moderate',
+       prune:['on','on','','','','','','','','','',''], when:'Jan–Feb, while dormant',
+       how:'Keep an open center: remove dead, crossing, and water sprouts, and shorten long limbs to keep fruit in reach. Fruit forms on new shoots.',
+       drink:'Deep soak every 7–14 days. Steady water prevents fruit drop.' },
+
+  OG:{ name:'Oregon grape', latin:'Mahonia aquifolium', group:'shrub', water:'low',
+       prune:['','','','on','on','','','','','','',''], when:'Apr–May, after flowers',
+       how:'Mostly leave it alone. If it gets leggy, cut the tallest stems to the ground or to a lower leaf cluster so it fills in. Wear gloves.',
+       drink:'Little to none once established; soak it in heat waves.' },
+  RC:{ name:'Red flowering currant', latin:'Ribes sanguineum', group:'shrub', water:'low',
+       prune:['','','','','on','','','','','','',''], when:'May, after blooming',
+       how:'Remove 1–2 of the oldest stems at the base and shorten wayward branches. Don’t shear — next year’s flowers form on this year’s wood.',
+       drink:'Every 2–3 weeks; it handles dry spells well.' },
+  LI:{ name:'Lilac', latin:'Syringa', group:'shrub', water:'moderate',
+       prune:['','','','','on','on','','','','','',''], when:'Late May–June',
+       how:'Snip spent flower clusters, take up to ⅓ of the oldest stems at the ground, and pull suckers. Stop by July — it sets next year’s buds in summer.',
+       drink:'Deep soak every 10–14 days in dry weather.' },
+  MO:{ name:'Mock orange', latin:'Philadelphus', group:'shrub', water:'low',
+       prune:['','','','','','','on','','','','',''], when:'July, after blooming',
+       how:'Cut stems that flowered back to a strong new shoot. Every year or two, take ⅕–⅓ of the oldest canes to the ground.',
+       drink:'Every 2–3 weeks once established.' },
+  DW:{ name:'Red-twig dogwood', latin:'Cornus sericea', group:'shrub', water:'regular',
+       prune:['','on','on','','','','','','','','',''], when:'Feb–Mar, before leaf-out',
+       how:'Cut ⅓ of the oldest (dull gray-brown) stems at the ground — new stems are the reddest. Every few years you can cut it all to 6–12".',
+       drink:'Likes moisture — deep weekly soak.' },
+
+  FE:{ name:'Western sword fern', latin:'Polystichum munitum', group:'shade', water:'low',
+       prune:['','on','on','','','','','','','','',''], when:'Feb–early Mar',
+       how:'Optional. Cut old, tattered fronds at the base before fiddleheads uncurl. Leave healthy green ones and don’t cut into the crown.',
+       drink:'Weekly for the first 2 summers, then rarely needed in shade.' },
+  HO:{ name:'Hosta', latin:'Hosta', group:'shade', water:'regular',
+       prune:['','','','','','','lite','lite','','','on',''], when:'Nov, after frost',
+       how:'Snip flower stalks after the summer bloom. After frost, cut yellowed leaves to the ground (or wait until early spring). Watch for slugs in spring.',
+       drink:'About 1" a week. Water the soil in the morning, not the leaves.' },
+
+  DA:{ name:'Dahlia', latin:'Dahlia', group:'flower', water:'regular',
+       prune:['','','','','','','lite','lite','lite','lite','on',''], when:'Nov, after frost',
+       how:'Deadhead to the next leaf pair all summer. Once frost blackens it, cut stalks to 4–6" and mulch 3–4" deep (dig tubers if the spot stays soggy).',
+       drink:'Deep soak 1–2×/week, but none before shoots appear.' },
+  LA:{ name:'Lavender', latin:'Lavandula', group:'flower', water:'low',
+       prune:['','','','','','','on','on','','','',''], when:'Jul–Aug, after 1st flush',
+       how:'Cut back about ⅓, leaving green leaves on every stem. Never cut into bare wood — it won’t regrow. No hard pruning in fall.',
+       drink:'Every 2–3 weeks. Overwatering kills it faster than drought.' },
+  CM:{ name:'Meadow checkermallow', latin:'Sidalcea campestris', group:'flower', water:'low',
+       prune:['','','','','','','on','on','','','',''], when:'Jul–Aug, after blooming',
+       how:'Cut spent flower stalks down to the leafy base — it may rebloom smaller. Clear dead foliage in late fall.',
+       drink:'Wants spring moisture; fine going semi-dormant in dry summer.' },
+  PN:{ name:'Richardson penstemon', latin:'Penstemon richardsonii', group:'flower', water:'low',
+       prune:['','','on','','','','lite','lite','','','',''], when:'Mar; deadhead Jul–Aug',
+       how:'Snip spent flower stalks in summer. In early spring, trim winter-killed tips back to green buds. Don’t cut to the ground — the base is woody.',
+       drink:'Every 2–3 weeks in heat. Needs good drainage.' },
+  CO:{ name:'Red columbine', latin:'Aquilegia', group:'flower', water:'moderate',
+       prune:['','','','','','on','','','','','',''], when:'June, after blooming',
+       how:'Cut spent stalks to the leafy base, or leave a few to self-seed. If leaf-miner trails show up, cut all foliage to the ground — it regrows fresh.',
+       drink:'Weekly during dry spells.' },
+  BF:{ name:'Blanket flower', latin:'Gaillardia', group:'flower', water:'low',
+       prune:['','','','','','lite','lite','on','lite','','',''], when:'Aug; deadhead Jun–Sep',
+       how:'Deadhead all summer, then cut back to about 6" in late summer so it lives longer. Leave the foliage on over winter.',
+       drink:'Every 1–2 weeks. Soggy soil kills it.' }
+};
+
+const COLS = 'BCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+const YARDS = {
+  back: {
+    label:'Back Yard', place:'Hillsboro, OR', mapped:'September 2026',
+    note:'Row 1 runs along the fence; row 4 is the lawn edge. Bigger rings are trees.',
+    edgeTop:'Fence', edgeBottom:'Lawn',
+    rows:[
+      {n:1,label:'Back row'},{n:2,label:'Middle row'},
+      {n:3,label:'Front row'},{n:4,label:'Lawn edge'}
+    ],
+    plants:[
+      {c:'DA',r:1,x:10.0,cell:'D1'},  {c:'OG',r:1,x:14.0,cell:'E1'},  {c:'OG',r:1,x:18.0,cell:'F1'},
+      {c:'OG',r:1,x:26.0,cell:'H1'},  {c:'RC',r:1,x:31.2,cell:'I1'},  {c:'OG',r:1,x:42.0,cell:'L1'},
+      {c:'LI',r:1,x:50.0,cell:'N1'},  {c:'DA',r:1,x:56.8,cell:'P1'},  {c:'OG',r:1,x:66.0,cell:'R1'},
+      {c:'MO',r:1,x:78.0,cell:'U1'},  {c:'DA',r:1,x:94.0,cell:'Y1'},  {c:'MO',r:1,x:98.0,cell:'Z1'},
+
+      {c:'CH',r:2,x:6.0,cell:'C2',big:true}, {c:'HO',r:2,x:15.2,cell:'E2'}, {c:'FE',r:2,x:19.2,cell:'F2'},
+      {c:'DW',r:2,x:23.2,cell:'G2'}, {c:'CM',r:2,x:30.0,cell:'I2'},
+      {c:'JM',r:2,x:34.0,cell:'J2',big:true}, {c:'CM',r:2,x:38.0,cell:'K2'},
+      {c:'FE',r:2,x:47.2,cell:'M2'}, {c:'LA',r:2,x:58.0,cell:'P2'}, {c:'DW',r:2,x:61.0,cell:'Q2'},
+      {c:'PN',r:2,x:65.4,cell:'R2'}, {c:'FE',r:2,x:70.0,cell:'S2'}, {c:'DW',r:2,x:86.0,cell:'W2'},
+      {c:'FE',r:2,x:90.0,cell:'X2'}, {c:'FE',r:2,x:94.0,cell:'Y2'},
+
+      {c:'CO',r:3,x:6.0,cell:'C3'},  {c:'BF',r:3,x:10.0,cell:'D3'},  {c:'FE',r:3,x:19.2,cell:'F3'},
+      {c:'HO',r:3,x:26.0,cell:'H3'}, {c:'FE',r:3,x:40.8,cell:'L3'},  {c:'HO',r:3,x:50.0,cell:'N3'},
+      {c:'FE',r:3,x:54.0,cell:'O3'}, {c:'FE',r:3,x:63.6,cell:'R3'},  {c:'HO',r:3,x:68.8,cell:'S3'},
+      {c:'FE',r:3,x:74.0,cell:'T3'}, {c:'LA',r:3,x:82.0,cell:'V3'},
+
+      {c:'PS',r:4,x:2.0,cell:'B4',big:true}, {c:'HO',r:4,x:46.0,cell:'M4'}
+    ]
+  },
+
+  front: {
+    label:'Front Yard', place:'Hillsboro, OR', mapped:null,
+    note:'', edgeTop:'Street', edgeBottom:'House',
+    rows:[], plants:[]
+  }
+};
+
+/* ── helpers ──────────────────────────────────────────────────────────────── */
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const THIS_MONTH = new Date().getMonth();
+
+function waterMarks(level){
+  return `<span class="wl wl-${level}"><i></i><i></i><i></i>${esc(WATER[level].label)}</span>`;
+}
+function monthStrip(prune, markNow){
+  return `<div class="months">` + prune.map((v,i) =>
+    `<span class="m ${v}${markNow && i === THIS_MONTH ? ' thismonth' : ''}">${MONTHS[i]}</span>`
+  ).join('') + `</div>`;
+}
+const countsFor = yard => {
+  const m = new Map();
+  yard.plants.forEach(p => m.set(p.c, (m.get(p.c) || 0) + 1));
+  return m;
+};
+
+/* ── state ────────────────────────────────────────────────────────────────── */
+let currentYard = 'back';
+let pickedSpecies = null;   // species code, or null
+let pruneMonth = null;      // 0–11, or null
+
+/* ── render ───────────────────────────────────────────────────────────────── */
+function render(){
+  const yard = YARDS[currentYard];
+  const body = document.getElementById('yardBody');
+  const counts = countsFor(yard);
+
+  document.getElementById('factPlants').textContent = yard.plants.length || '—';
+  document.getElementById('factKinds').textContent = counts.size || '—';
+  document.getElementById('eyebrow').textContent =
+    yard.place + (yard.mapped ? ' · mapped ' + yard.mapped : ' · not mapped yet');
+
+  if (!yard.plants.length) {
+    body.innerHTML = `
+      <div class="blank">
+        <h2>${esc(yard.label)} isn’t mapped yet</h2>
+        <p>When it is, it’ll work exactly like the back yard — tap any plant for its
+        pruning window and watering, or pick a month to see what needs cutting back.</p>
+      </div>`;
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="controls">
+      <span class="clabel">Prune in</span>
+      <div class="months-pick" id="monthPick">
+        ${MONTHS.map((m,i) => `<button type="button" data-m="${i}" aria-pressed="false"
+           title="${MONTH_NAMES[i]}">${m}</button>`).join('')}
+      </div>
+      <button type="button" class="btn now" id="nowBtn">This month</button>
+      <button type="button" class="btn" id="clearBtn">Clear</button>
+    </div>
+    <p class="status" id="status"></p>
+
+    <div class="mapwrap">
+      <div class="fence"></div>
+      <div class="map">
+        <div class="colrow"><div></div>${COLS.map(c => `<div class="colhead">${c}</div>`).join('')}</div>
+        ${yard.rows.map(row => `
+          <div class="mrow">
+            <div class="rowhead"><b>${row.n}</b><span>${esc(row.label)}</span></div>
+            <div class="track">
+              ${COLS.map((_,i) => `<div class="vline" style="left:${((i+1)*4).toFixed(3)}%"></div>`).join('')}
+              ${yard.plants.filter(p => p.r === row.n).map(p => {
+                const s = SPECIES[p.c];
+                return `<button type="button" class="plant" data-code="${p.c}" data-cell="${p.cell}"
+                          style="left:${p.x}%" title="${esc(s.name)} · ${p.cell}">
+                          <span class="disc g-${s.group}${p.big ? ' big' : ''}">${p.c}</span>
+                          <i>${p.cell}</i>
+                        </button>`;
+              }).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="lawn">${esc(yard.edgeBottom)}</div>
+    </div>
+
+    <div class="legend">
+      ${GROUPS.map(g => {
+        const codes = Object.keys(SPECIES).filter(c => SPECIES[c].group === g.key && counts.get(c));
+        if (!codes.length) return '';
+        const total = codes.reduce((n,c) => n + counts.get(c), 0);
+        return `<section class="lgroup">
+          <h3>${esc(g.label)} <span>${total}</span></h3>
+          <ul>${codes.map(c => `
+            <li><button type="button" data-species="${c}" aria-pressed="false">
+              <span class="disc g-${g.key}">${c}</span>
+              <span class="lname">${esc(SPECIES[c].name)} <span class="count">×${counts.get(c)}</span></span>
+            </button></li>`).join('')}
+          </ul></section>`;
+      }).join('')}
+    </div>
+
+    <div class="detail empty" id="detail">
+      Tap any plant on the map — or a name in the key — for its pruning window and watering.
+    </div>
+
+    <section class="care">
+      <h2>Pruning &amp; watering</h2>
+      <div class="basics">
+        <p><b>When to water:</b> the schedule is for the dry season, roughly July–September;
+        rain covers most of the rest. Soak deeply at the base, early morning.</p>
+        <p><b>First two summers:</b> every plant gets a deep weekly soak, whatever its rating.
+        A 2–3" layer of mulch each spring cuts watering a lot.</p>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th>Plant</th><th>Prune months</th><th>How to prune</th><th>Summer watering</th>
+          </tr></thead>
+          <tbody>
+            ${['regular','moderate','low'].map(level => {
+              const codes = Object.keys(SPECIES).filter(c => SPECIES[c].water === level && counts.get(c));
+              if (!codes.length) return '';
+              return `<tr class="wgroup"><th colspan="4">${waterMarks(level)}<em>${esc(WATER[level].note)}</em></th></tr>`
+                + codes.map(c => {
+                    const s = SPECIES[c];
+                    return `<tr class="plantrow" data-species="${c}">
+                      <td><div class="pcol"><span class="disc g-${s.group}">${c}</span>
+                        <span><span class="lname">${esc(s.name)}</span>
+                        <div class="latin">${esc(s.latin)}</div></span></div></td>
+                      <td class="wcol">${monthStrip(s.prune, true)}<div class="when">${esc(s.when)}</div></td>
+                      <td class="how">${esc(s.how)}</td>
+                      <td class="water">${esc(s.drink)}</td>
+                    </tr>`;
+                  }).join('');
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>${esc(yard.note)}</span>
+      <span>Mapped ${esc(yard.mapped)}</span>
+    </footer>`;
+
+  wire();
+  applyState();
+}
+
+/* ── interaction ──────────────────────────────────────────────────────────── */
+function wire(){
+  document.querySelectorAll('.plant').forEach(el => {
+    el.addEventListener('click', () => {
+      pickedSpecies = (pickedSpecies === el.dataset.code) ? null : el.dataset.code;
+      applyState();
+    });
+  });
+  document.querySelectorAll('[data-species]').forEach(el => {
+    if (el.tagName !== 'BUTTON') return;
+    el.addEventListener('click', () => {
+      pickedSpecies = (pickedSpecies === el.dataset.species) ? null : el.dataset.species;
+      applyState();
+    });
+  });
+  document.querySelectorAll('#monthPick button').forEach(el => {
+    el.addEventListener('click', () => {
+      const m = Number(el.dataset.m);
+      pruneMonth = (pruneMonth === m) ? null : m;
+      applyState();
+    });
+  });
+  document.getElementById('nowBtn').addEventListener('click', () => {
+    pruneMonth = (pruneMonth === THIS_MONTH) ? null : THIS_MONTH;
+    applyState();
+  });
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    pruneMonth = null; pickedSpecies = null; applyState();
+  });
+}
+
+const dueThisMonth = code =>
+  pruneMonth != null && SPECIES[code].prune[pruneMonth] !== '';
+
+function applyState(){
+  // month buttons
+  document.querySelectorAll('#monthPick button').forEach(el =>
+    el.setAttribute('aria-pressed', String(Number(el.dataset.m) === pruneMonth)));
+  // legend buttons
+  document.querySelectorAll('.lgroup button[data-species]').forEach(el =>
+    el.setAttribute('aria-pressed', String(el.dataset.species === pickedSpecies)));
+
+  // map markers
+  document.querySelectorAll('.plant').forEach(el => {
+    const code = el.dataset.code;
+    const due = dueThisMonth(code);
+    const picked = pickedSpecies === code;
+    el.classList.toggle('picked', picked && !due);
+    el.classList.toggle('due', due);
+    const dimmedByMonth   = pruneMonth != null && !due;
+    const dimmedBySpecies = pickedSpecies != null && !picked;
+    el.classList.toggle('dim', dimmedByMonth || dimmedBySpecies);
+  });
+
+  // care table rows
+  document.querySelectorAll('tr.plantrow').forEach(tr => {
+    const code = tr.dataset.species;
+    const hit = (pickedSpecies === code) || dueThisMonth(code);
+    const anySelection = pickedSpecies != null || pruneMonth != null;
+    tr.classList.toggle('hit', hit);
+    tr.classList.toggle('fade', anySelection && !hit);
+  });
+
+  renderDetail();
+  renderStatus();
+}
+
+function renderStatus(){
+  const el = document.getElementById('status');
+  if (!el) return;
+  const bits = [];
+  if (pruneMonth != null) {
+    const n = document.querySelectorAll('.plant.due').length;
+    bits.push(n
+      ? `<b>${n}</b> plant${n === 1 ? '' : 's'} to prune in <b>${MONTH_NAMES[pruneMonth]}</b>`
+      : `Nothing to prune in <b>${MONTH_NAMES[pruneMonth]}</b>`);
+  }
+  if (pickedSpecies) {
+    const n = document.querySelectorAll(`.plant[data-code="${pickedSpecies}"]`).length;
+    bits.push(`<b>${n}</b> × ${esc(SPECIES[pickedSpecies].name)} highlighted`);
+  }
+  el.innerHTML = bits.join(' &nbsp;·&nbsp; ');
+}
+
+function renderDetail(){
+  const box = document.getElementById('detail');
+  if (!box) return;
+  if (!pickedSpecies) {
+    box.className = 'detail empty';
+    box.innerHTML = 'Tap any plant on the map — or a name in the key — for its pruning window and watering.';
+    return;
+  }
+  const s = SPECIES[pickedSpecies];
+  const cells = YARDS[currentYard].plants
+    .filter(p => p.c === pickedSpecies).map(p => p.cell).join(', ');
+  box.className = 'detail';
+  box.innerHTML = `
+    <span class="disc g-${s.group}">${pickedSpecies}</span>
+    <div class="dbody">
+      <h2>${esc(s.name)}</h2>
+      <div class="latin">${esc(s.latin)}</div>
+      <div class="dmeta">${waterMarks(s.water)}<span class="pill">${esc(WATER[s.water].note)}</span></div>
+      <div class="drow">
+        <div class="dkey">Prune</div>
+        <div>${monthStrip(s.prune, true)}<div class="when">${esc(s.when)}</div></div>
+      </div>
+      <div class="drow"><div class="dkey">How</div><div>${esc(s.how)}</div></div>
+      <div class="drow"><div class="dkey">Water</div><div>${esc(s.drink)}</div></div>
+      <div class="drow"><div class="dkey">Where</div><div class="mono">${esc(cells)}</div></div>
+    </div>`;
+}
+
+/* ── tabs ─────────────────────────────────────────────────────────────────── */
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-yard]');
+  if (!btn || btn.dataset.yard === currentYard) return;
+  currentYard = btn.dataset.yard;
+  pickedSpecies = null; pruneMonth = null;
+  document.querySelectorAll('#tabs button').forEach(b =>
+    b.toggleAttribute('aria-current', b === btn) );
+  document.querySelectorAll('#tabs button').forEach(b => {
+    if (b === btn) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
