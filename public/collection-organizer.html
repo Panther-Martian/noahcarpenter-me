@@ -451,7 +451,7 @@
 
       <span class="spacer"></span>
       <span class="row-count" id="rowCount"></span>
-      <button class="btn btn-secondary" id="resetOrderBtn" title="Restore original import order">Reset order</button>
+      <button class="btn btn-secondary" id="resetOrderBtn" title="Back to scan order, most recently scanned first">Reset order</button>
       <button class="btn btn-primary" id="exportBtn">Export CSV</button>
       <button class="btn btn-secondary" id="newFileBtn">New file</button>
     </div>
@@ -762,8 +762,11 @@ async function handleFile(file) {
     const enriched = await enrichWithScryfall(rows, (pct, msg) => setProgress(pct, msg));
     setProgress(100, `Done — ${enriched.length} cards enriched`, 'done');
 
-    allRows = enriched;
-    originalOrder = enriched.slice();
+    // ManaBox exports oldest-scanned first, so reverse it: the card you just
+    // scanned is the one you want at the top.
+    const scanOrder = enriched.slice().reverse();
+    allRows = scanOrder;
+    originalOrder = scanOrder.slice();
     sortCol = null;
     sortDir = 'asc';
     activeTier = 'all';
