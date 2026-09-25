@@ -90,6 +90,26 @@ h1{
 .projects{display:grid;gap:14px;margin:0;padding:0;list-style:none;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 
+.divider{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin:44px 0 18px;
+  font-family:"Lilita One","Impact",sans-serif;
+  font-weight:400;
+  font-size:1.05rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.divider::after{
+  content:"";
+  flex:1;
+  height:2px;
+  background:var(--line);
+  opacity:.45;
+}
+
 .project{
   display:block;
   background:var(--card);
@@ -107,7 +127,8 @@ h1{
   box-shadow:6px 6px 0 var(--accent);
   outline:none;
 }
-.project h2{
+.project h2,
+.project h3{
   margin:0;
   font-family:"Lilita One","Impact",sans-serif;
   font-weight:400;
@@ -154,10 +175,20 @@ h1{
           <p>What's planted where in the yard, when each thing needs pruning, and how much to water it.</p>
         </a>
       </li>
+    </ul>
+
+    <h2 class="divider">Magic: The Gathering</h2>
+    <ul class="projects">
       <li>
         <a class="project" href="collection-organizer.html">
-          <h2>MTG Card Organizer</h2>
+          <h3>MTG Card Organizer</h3>
           <p>Drop in a ManaBox export for Scryfall prices and EDHREC ranks, merge several lists into one, or see what Card Kingdom will pay for the lot.</p>
+        </a>
+      </li>
+      <li>
+        <a class="project" href="ck-binder-buylist.html">
+          <h3>Binder Buylist</h3>
+          <p>Flip through a binder, search each card, and build a sell list against Card Kingdom's buylist as you go.</p>
         </a>
       </li>
     </ul>

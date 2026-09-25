@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binder Buylist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#eef0ec; --panel:#fbfcfa; --ink:#1c2322; --muted:#5d6865; --line:#d5dbd6;
+  --accent:#27584a; --accent-ink:#fff;
+  --sell:#1f7a4d; --sell-bg:#dcefe3; --check:#9a6a12; --check-bg:#f6ead0;
+  --bulk:#5a6470; --bulk-bg:#e3e7ea; --keep:#34558f; --keep-bg:#dde6f5;
+  --info:#4a5c7a; --focus:#2f7d67;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131817; --panel:#1b2220; --ink:#e4ebe7; --muted:#97a39e; --line:#2d3734;
+    --accent:#5fae93; --accent-ink:#0d1412;
+    --sell:#6fcf9b; --sell-bg:#193426; --check:#e2b460; --check-bg:#3a2f18;
+    --bulk:#a9b2bb; --bulk-bg:#262d33; --keep:#8fb0ea; --keep-bg:#1d2840;
+    --info:#a8b8d6; --focus:#6fcfab; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131817; --panel:#1b2220; --ink:#e4ebe7; --muted:#97a39e; --line:#2d3734;
+  --accent:#5fae93; --accent-ink:#0d1412;
+  --sell:#6fcf9b; --sell-bg:#193426; --check:#e2b460; --check-bg:#3a2f18;
+  --bulk:#a9b2bb; --bulk-bg:#262d33; --keep:#8fb0ea; --keep-bg:#1d2840;
+  --info:#a8b8d6; --focus:#6fcfab; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button.primary kbd{background:transparent;color:inherit;border-color:currentColor;opacity:.8}
+button:disabled{opacity:.45;cursor:not-allowed}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--body);padding:20px 16px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 20px;justify-content:space-between}
+h1{font:700 34px/1 var(--display);letter-spacing:.01em;margin:0;text-wrap:balance}
+h2{font:700 15px/1 var(--display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
+.status{font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:6px 12px}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:focus-visible,input:focus-visible,.pr:focus-visible,.sug li:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.searchbox{position:relative}
+#q{width:100%;font-size:20px;padding:12px 14px;border:2px solid var(--line);border-radius:8px;background:var(--panel)}
+#q:focus{border-color:var(--accent);outline:none}
+.hint{font-size:13px;color:var(--muted);margin-top:6px}
+kbd{font:500 12px var(--mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--bg)}
+.sug{list-style:none;margin:6px 0 0;padding:4px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.sug li{padding:6px 10px;border-radius:5px;cursor:pointer}
+.sug li[aria-selected="true"]{background:var(--bg);font-weight:600}
+.filters{display:flex;gap:6px;margin:14px 0 8px;flex-wrap:wrap;align-items:center}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.plist{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.pr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;align-items:center}
+.pr:last-child{border-bottom:0}
+.pr[aria-selected="true"]{background:var(--bg);box-shadow:inset 3px 0 0 var(--accent)}
+.pr .ed{font-weight:600}
+.pr .var{color:var(--muted);font-size:13px}
+.pr .price{text-align:right;min-width:74px}
+.pr .wants{font-size:12px;color:var(--muted);text-align:right;min-width:62px}
+.pr.nobuy{opacity:.55}
+.chip{display:inline-block;font:600 11px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:4px;background:var(--bg);color:var(--muted);margin-left:6px;vertical-align:1px}
+.verdict{display:grid;grid-template-columns:146px minmax(0,1fr);gap:16px;margin-top:16px}
+@media (max-width:520px){.verdict{grid-template-columns:1fr}.imgph{aspect-ratio:488/680;border-radius:7px;background:var(--bg);border:1px dashed var(--line)}
+.verdict img{max-width:180px}}
+.verdict img{width:100%;border-radius:7px;background:var(--bg);aspect-ratio:488/680;object-fit:cover}
+.call{font:700 44px/1 var(--display);letter-spacing:.02em;padding:6px 14px;border-radius:8px;display:inline-block}
+.c-SELL{background:var(--sell-bg);color:var(--sell)}
+.c-SELLq{background:var(--check-bg);color:var(--check)}
+.c-BULK{background:var(--bulk-bg);color:var(--bulk)}
+.c-KEEP{background:var(--keep-bg);color:var(--keep)}
+.vname{font:700 22px/1.1 var(--display);margin:10px 0 2px}
+.vsub{color:var(--muted);font-size:14px}
+.figs{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0}
+.figs div{display:grid}
+.figs small{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.figs b{font:500 17px var(--mono)}
+.reasons{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:14px}
+.reasons li.warn{color:var(--check)}
+.reasons li.info{color:var(--info)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.qty button{border:0;border-radius:0;padding:6px 10px}
+.qty input{width:44px;text-align:center;border:0;background:transparent;font-family:var(--mono)}
+.empty{color:var(--muted);font-size:14px;padding:18px 4px}
+.settings{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.settings label{display:flex;gap:6px;align-items:center}
+.settings input{width:64px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--mono)}
+.totals{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+.totals .big{font:700 30px/1 var(--display)}
+.slist{list-style:none;margin:0;padding:0;max-height:360px;overflow:auto}
+.slist li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);align-items:center;font-size:14px}
+.slist .meta{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.slist button{padding:1px 8px;font-size:13px}
+.log{list-style:none;margin:0;padding:0;font-size:13px;display:grid;gap:3px}
+.log span.t{font:600 11px var(--body);letter-spacing:.05em;display:inline-block;width:46px}
+.err{background:var(--check-bg);color:var(--check);padding:10px 12px;border-radius:8px;font-size:14px}
+.side{display:grid;gap:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){.call{animation:pop .18s ease-out}@keyframes pop{from{transform:scale(.94)}to{transform:none}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Binder Buylist</h1>
+    <div class="status"><span id="status">Loading Card Kingdom's buylist…</span><button id="refresh" type="button">Refresh prices</button></div>
+  </header>
+
+  <div id="loadErr" class="err" hidden></div>
+
+  <div class="grid">
+    <section class="panel" aria-label="Look up a card">
+      <div class="searchbox">
+        <input id="q" aria-label="Card name, or set code and collector number" type="search" autocomplete="off" spellcheck="false" placeholder="Card name, or set + number (mh3 241)" disabled>
+        <div class="hint">Type a name or the set code and collector number from the card's bottom corner. <kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>Enter</kbd> choose, <kbd>S</kbd> sell, <kbd>K</kbd> keep, <kbd>Esc</kbd> start over.</div>
+        <ul id="sug" class="sug" role="listbox" hidden></ul>
+      </div>
+
+      <div id="printings" hidden>
+        <div class="filters">
+          <strong id="plabel"></strong>
+          <span style="flex:1"></span>
+          <button type="button" data-f="all" aria-pressed="true">All</button>
+          <button type="button" data-f="nonfoil" aria-pressed="false">Non-foil</button>
+          <button type="button" data-f="foil" aria-pressed="false">Foil</button>
+        </div>
+        <div id="plist" class="plist" role="listbox" aria-label="Printings" tabindex="-1"></div>
+      </div>
+
+      <div id="verdict"></div>
+      <div id="placeholder" class="empty">Pull the next card from the binder and type it in.</div>
+      <div id="pickHint" class="hint" hidden>Several printings. Use <kbd>↓</kbd> or click the one in your hand.</div>
+    </section>
+
+    <aside class="side">
+      <section class="panel" aria-label="Sell list">
+        <h2>Sell list</h2>
+        <div class="totals">
+          <div><div class="big num" id="tCredit">$0.00</div><small class="vsub">store credit</small></div>
+          <div><div class="num" id="tCash">$0.00 cash</div><small class="vsub" id="tCount">0 cards</small></div>
+        </div>
+        <ul id="slist" class="slist"></ul>
+        <div class="row" style="margin-top:12px">
+          <button type="button" class="primary" id="exportCsv">Download CK CSV</button>
+          <button type="button" id="copyCsv">Copy CSV</button>
+          <button type="button" id="clearList">Clear list</button>
+        </div>
+        <div id="clearConfirm" class="row" style="margin-top:8px" hidden>
+          <span class="vsub">Clear every card from the list?</span>
+          <button type="button" id="clearYes">Clear</button><button type="button" id="clearNo">Cancel</button>
+        </div>
+        <div class="hint">Upload the CSV on Card Kingdom's Sell page → CSV Import. Alternate-art printings can import as the base version; spot-check those.</div>
+      </section>
+
+      <section class="panel" aria-label="Rules">
+        <h2>Rules</h2>
+        <div class="settings">
+          <label for="sFloor">Floor (credit) $<input id="sFloor" type="number" step="0.05" min="0"></label>
+          <label for="sRatio">Flag if under<input id="sRatio" type="number" step="5" min="0" max="100">% of market</label>
+          <label for="sRank">Staple if EDHREC top<input id="sRank" type="number" step="100" min="0"></label>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Recent decisions">
+        <h2>Recent</h2>
+        <ul id="log" class="log"><li class="vsub">Nothing checked yet.</li></ul>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+// ---- core logic (pure; tested in node) ----
+const CREDIT_BONUS = 1.3; // CK pays 30% more in store credit
+
+function normNum(n) {
+  return String(n || '').toLowerCase().replace(/^0+(?=\w)/, '').trim();
+}
+
+function buildIndex(raw) {
+  const rows = [];
+  const byName = new Map(); // lowercased name -> rows
+  const bySku = new Map();  // "set|num" -> rows
+  for (const r of raw) {
+    if (!r || !r.name) continue;
+    const foil = r.is_foil === 'true' || r.is_foil === true;
+    const row = {
+      name: r.name,
+      edition: r.edition || '',
+      variation: r.variation || '',
+      foil,
+      buy: parseFloat(r.price_buy) || 0,
+      retail: parseFloat(r.price_retail) || 0,
+      wants: +r.qty_buying || 0,
+      sku: r.sku || '',
+      scryfall: r.scryfall_id || '',
+      url: r.url || '',
+    };
+    rows.push(row);
+    const k = row.name.toLowerCase();
+    if (!byName.has(k)) byName.set(k, []);
+    byName.get(k).push(row);
+    const m = row.sku.match(/^([A-Z0-9]+)-(.+)$/i);
+    if (m) {
+      const set = m[1].toLowerCase();
+      const num = normNum(m[2]);
+      const keys = [set + '|' + num];
+      // foil SKUs carry an "F" prefix (FPCY-045); index the bare set code too
+      if (foil && set.length > 2 && set[0] === 'f') keys.push(set.slice(1) + '|' + num);
+      for (const key of keys) {
+        if (!bySku.has(key)) bySku.set(key, []);
+        bySku.get(key).push(row);
+      }
+    }
+  }
+  const names = [...byName.keys()];
+  return { rows, byName, bySku, names };
+}
+
+// "mh3 241", "MH3-241", "pcy 45" -> {set, num}
+function parseSetNum(q) {
+  const m = q.trim().match(/^([a-z0-9]{2,6})\s*[-\s#]\s*#?([0-9]+[a-z★]?)$/i);
+  if (!m || !/[a-z]/i.test(m[1])) return null;
+  return { set: m[1].toLowerCase(), num: normNum(m[2]) };
+}
+
+function searchNames(idx, q, limit = 8) {
+  const s = q.trim().toLowerCase();
+  if (s.length < 2) return [];
+  const starts = [], contains = [];
+  for (const n of idx.names) {
+    if (n.startsWith(s)) starts.push(n);
+    else if (n.includes(s)) contains.push(n);
+    if (starts.length >= limit) break;
+  }
+  starts.sort((a, b) => a.length - b.length);
+  return starts.concat(contains).slice(0, limit).map(n => idx.byName.get(n)[0].name);
+}
+
+function lookup(idx, q) {
+  const sn = parseSetNum(q);
+  if (sn) {
+    const hits = idx.bySku.get(sn.set + '|' + sn.num);
+    if (hits && hits.length) return { kind: 'printings', rows: sortPrintings(hits), label: q.trim().toUpperCase() };
+  }
+  const exact = idx.byName.get(q.trim().toLowerCase());
+  if (exact) return { kind: 'printings', rows: sortPrintings(exact), label: exact[0].name };
+  return { kind: 'names', names: searchNames(idx, q) };
+}
+
+function sortPrintings(rows) {
+  return rows.slice().sort((a, b) =>
+    (b.wants > 0) - (a.wants > 0) || b.buy - a.buy || a.edition.localeCompare(b.edition));
+}
+
+// settings: {floor, lowRatio, stapleRank}
+// extra (optional, from Scryfall): {market, edhrec, reserved}
+function verdict(row, qty, settings, extra = {}) {
+  const credit = +(row.buy * CREDIT_BONUS).toFixed(2);
+  const reasons = [];
+  const flags = [];
+  let call;
+
+  if (row.wants <= 0) {
+    call = 'KEEP';
+    reasons.push("CK isn't buying this printing right now.");
+  } else if (credit < settings.floor) {
+    call = 'BULK';
+    reasons.push(`$${credit.toFixed(2)} credit is under your $${settings.floor.toFixed(2)} floor.`);
+  } else {
+    call = 'SELL';
+    reasons.push(`$${credit.toFixed(2)} credit each (${fmt(row.buy)} cash).`);
+  }
+
+  if (call !== 'KEEP' && qty > row.wants) {
+    flags.push({ tone: 'warn', text: `CK only wants ${row.wants}; the rest stay with you.` });
+  }
+  const market = extra.market;
+  if (call === 'SELL' && market >= 5 && credit < market * settings.lowRatio) {
+    call = 'SELL?';
+    flags.push({ tone: 'warn', text: `Credit is ${Math.round(credit / market * 100)}% of TCG market (${fmt(market)}). Might be worth listing elsewhere.` });
+  }
+  if (extra.edhrec && extra.edhrec <= settings.stapleRank) {
+    flags.push({ tone: 'info', text: `Commander staple (EDHREC #${extra.edhrec}). Rebuying it from CK costs ${fmt(row.retail)}.` });
+  }
+  if (extra.reserved) flags.push({ tone: 'info', text: 'Reserved List: this card will never be reprinted.' });
+
+  const sellQty = call === 'KEEP' ? 0 : Math.min(qty, row.wants);
+  return { call, credit, cash: row.buy, reasons, flags, sellQty, total: +(credit * sellQty).toFixed(2) };
+}
+
+function fmt(n) { return '$' + (+n || 0).toFixed(2); }
+
+function csvCell(s) {
+  s = String(s);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+// CK CSV import: card name, edition, foil, quantity
+function toCkCsv(list) {
+  const lines = ['card name,edition,foil,quantity'];
+  for (const it of list) lines.push([it.name, it.edition, it.foil ? 'true' : 'false', it.qty].map(csvCell).join(','));
+  return lines.join('\n') + '\n';
+}
+
+if (typeof module !== 'undefined' && module.exports) module.exports = { buildIndex, parseSetNum, searchNames, lookup, verdict, toCkCsv, CREDIT_BONUS };
+
+
+// ---- page ----
+const CK_URL = 'https://api.cardkingdom.com/api/v2/pricelist';
+const CACHE_TTL = 12 * 3600 * 1000;
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('bb_' + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('bb_' + k, JSON.stringify(v)); } catch {} },
+};
+
+let idx = null;
+let settings = Object.assign({ floor: 0.5, lowRatio: 0.5, stapleRank: 500 }, store.get('settings', {}));
+let sellList = store.get('sell', []);
+let log = store.get('log', []);
+let sugs = [], sugSel = -1;
+let printings = [], shown = [], pSel = -1, foilFilter = 'all';
+let current = null; // {row, extra, v, qty}
+const scryCache = new Map();
+
+// IndexedDB cache for the pricelist (big for localStorage)
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('binder-buylist', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet(k) { const db = await idb(); return new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); }
+async function idbSet(k, v) { const db = await idb(); return new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = res; }); }
+
+async function loadData(force) {
+  $('status').textContent = 'Loading Card Kingdom’s buylist…';
+  $('loadErr').hidden = true;
+  let cached = null;
+  try { cached = await idbGet('ck'); } catch {}
+  if (!force && cached && Date.now() - cached.fetchedAt < CACHE_TTL) return ready(cached);
+  try {
+    const r = await fetch(CK_URL);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const slim = j.data.map(x => ({ name: x.name, edition: x.edition, variation: x.variation, is_foil: x.is_foil, price_buy: x.price_buy, price_retail: x.price_retail, qty_buying: x.qty_buying, sku: x.sku, scryfall_id: x.scryfall_id, url: x.url }));
+    const pack = { fetchedAt: Date.now(), ckTime: j.meta && j.meta.created_at, data: slim };
+    try { await idbSet('ck', pack); } catch {}
+    ready(pack);
+  } catch (e) {
+    if (cached) { ready(cached); showErr(`Couldn't refresh prices (${e.message}). Using prices from ${ago(cached.fetchedAt)}.`); }
+    else { $('status').textContent = 'No price data'; showErr(`Couldn't reach Card Kingdom (${e.message}). Check your connection and hit Refresh prices.`); }
+  }
+}
+function showErr(t) { $('loadErr').textContent = t; $('loadErr').hidden = false; }
+function ago(t) { const m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + ' min ago' : Math.round(m / 60) + ' hr ago'; }
+function ready(pack) {
+  idx = buildIndex(pack.data);
+  const buying = idx.rows.filter(r => r.wants > 0).length;
+  $('status').innerHTML = `<span class="num">${buying.toLocaleString()}</span> printings on CK's buylist · updated ${ago(pack.fetchedAt)}`;
+  $('q').disabled = false; $('q').focus();
+}
+
+// ---- search ----
+$('q').addEventListener('input', () => {
+  if (!idx) return;
+  const q = $('q').value;
+  clearPrintings();
+  if (q.trim().length < 2) { hideSug(); return; }
+  const sn = parseSetNum(q);
+  if (sn && idx.bySku.has(sn.set + '|' + sn.num)) { hideSug(); showPrintings(lookup(idx, q)); return; }
+  sugs = searchNames(idx, q); sugSel = sugs.length ? 0 : -1; renderSug();
+});
+$('q').addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); e.stopPropagation();
+    const d = e.key === 'ArrowDown' ? 1 : -1;
+    if (!$('sug').hidden && sugs.length) { sugSel = (sugSel + d + sugs.length) % sugs.length; renderSug(); }
+    else if (shown.length) { selectP(Math.max(0, Math.min(shown.length - 1, pSel + d))); }
+  } else if (e.key === 'Enter') {
+    e.preventDefault(); e.stopPropagation();
+    if (!$('sug').hidden && sugSel >= 0) pickName(sugs[sugSel]);
+    else if (shown.length && pSel < 0) selectP(0);
+    else if (!sugs.length && $('q').value.trim()) { const r = lookup(idx, $('q').value); if (r.kind === 'printings') showPrintings(r, true); }
+  } else if (e.key === 'Escape') { reset(); }
+});
+// Once a printing is chosen, focus leaves the search box: S sells, K keeps,
+// arrows move between printings, and any other letter starts a new search.
+document.addEventListener('keydown', e => {
+  const a = document.activeElement;
+  if (e.metaKey || e.ctrlKey || e.altKey || !idx) return;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'SELECT' || a.tagName === 'TEXTAREA')) return;
+  const k = e.key.toLowerCase();
+  if (current && k === 's') { e.preventDefault(); act('sell'); }
+  else if (current && k === 'k') { e.preventDefault(); act('keep'); }
+  else if (k === 'escape') { reset(); }
+  else if ((k === 'arrowdown' || k === 'arrowup') && shown.length) { e.preventDefault(); selectP(Math.max(0, Math.min(shown.length - 1, pSel + (k === 'arrowdown' ? 1 : -1)))); }
+  else if (k === 'enter' && shown.length && pSel < 0 && a === $('plist')) { e.preventDefault(); selectP(0); }
+  else if (k === '+' || k === '=') { if (current) { e.preventDefault(); setQty(current.qty + 1); } }
+  else if (k === '-') { if (current) { e.preventDefault(); setQty(current.qty - 1); } }
+  else if (e.key.length === 1 && /\S/.test(e.key) && (!a || a.tagName !== 'BUTTON' || e.key !== ' ')) { reset(); }
+});
+
+function renderSug() {
+  const ul = $('sug'); ul.innerHTML = '';
+  if (!sugs.length) { ul.hidden = false; ul.innerHTML = '<li class="vsub">No card by that name on CK’s list.</li>'; return; }
+  sugs.forEach((n, i) => {
+    const li = document.createElement('li'); li.textContent = n; li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', i === sugSel);
+    li.onclick = () => pickName(n); ul.appendChild(li);
+  });
+  ul.hidden = false;
+}
+function hideSug() { $('sug').hidden = true; sugs = []; sugSel = -1; }
+function pickName(n) { $('q').value = n; hideSug(); showPrintings(lookup(idx, n), true); }
+
+function clearPrintings() { printings = []; shown = []; pSel = -1; $('printings').hidden = true; clearVerdict(); }
+function showPrintings(res, chosen) {
+  printings = res.rows; $('plabel').textContent = res.label;
+  $('printings').hidden = false; renderPrintings();
+  // one printing: show the verdict; several: make the user pick so S can't sell the wrong one
+  if (chosen && shown.length === 1) selectP(0);
+  else if (chosen && shown.length) $('plist').focus();
+}
+document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
+  foilFilter = b.dataset.f;
+  document.querySelectorAll('[data-f]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  renderPrintings(); $('q').focus();
+});
+function renderPrintings() {
+  shown = printings.filter(r => foilFilter === 'all' || (foilFilter === 'foil') === r.foil);
+  const el = $('plist'); el.innerHTML = '';
+  if (!shown.length) { el.innerHTML = '<div class="empty" style="padding:12px">No printings match that filter.</div>'; }
+  shown.forEach((r, i) => {
+    const d = document.createElement('div');
+    d.className = 'pr' + (r.wants > 0 ? '' : ' nobuy'); d.setAttribute('role', 'option'); d.tabIndex = -1;
+    d.setAttribute('aria-selected', i === pSel);
+    d.innerHTML = `<div><span class="ed"></span>${r.foil ? '<span class="chip">Foil</span>' : ''}<div class="var"></div></div>
+      <div class="wants">${r.wants > 0 ? 'wants ' + r.wants : 'not buying'}</div>
+      <div class="price num">${fmt(r.buy * CREDIT_BONUS)}</div>`;
+    d.querySelector('.ed').textContent = r.edition;
+    d.querySelector('.var').textContent = [r.variation, r.sku].filter(Boolean).join(' · ');
+    d.onclick = () => selectP(i);
+    el.appendChild(d);
+  });
+  pSel = -1; clearVerdict();
+}
+function selectP(i) {
+  pSel = i; $('pickHint').hidden = true;
+  [...$('plist').children].forEach((c, j) => c.setAttribute('aria-selected', j === i));
+  const c = $('plist').children[i]; if (c) { c.scrollIntoView({ block: 'nearest' }); c.focus({ preventScroll: true }); }
+  showVerdict(shown[i], 1);
+}
+
+// ---- verdict ----
+async function scry(id) {
+  if (!id) return null;
+  if (scryCache.has(id)) return scryCache.get(id);
+  try {
+    const r = await fetch('https://api.scryfall.com/cards/' + id);
+    if (!r.ok) throw 0;
+    const j = await r.json();
+    const img = (j.image_uris || (j.card_faces && j.card_faces[0].image_uris) || {}).normal;
+    const out = { usd: parseFloat(j.prices.usd) || null, usdFoil: parseFloat(j.prices.usd_foil) || parseFloat(j.prices.usd_etched) || null, edhrec: j.edhrec_rank || null, reserved: !!j.reserved, img };
+    scryCache.set(id, out); return out;
+  } catch { return null; }
+}
+function clearVerdict() { current = null; $('verdict').innerHTML = ''; $('placeholder').hidden = !!printings.length; $('pickHint').hidden = !(shown.length > 1 && pSel < 0); }
+
+async function showVerdict(row, qty) {
+  current = { row, qty, extra: {} };
+  $('placeholder').hidden = true;
+  renderVerdict();
+  const s = await scry(row.scryfall);
+  if (!current || current.row !== row) return;
+  if (s) { current.extra = { market: row.foil ? s.usdFoil : s.usd, edhrec: s.edhrec, reserved: s.reserved, img: s.img }; renderVerdict(); }
+}
+function renderVerdict() {
+  const { row, qty, extra } = current;
+  const v = verdict(row, qty, settings, extra); current.v = v;
+  const cls = 'c-' + v.call.replace('?', 'q');
+  const label = v.call === 'SELL?' ? 'SELL?' : v.call;
+  const box = $('verdict');
+  box.innerHTML = `<div class="verdict">
+    <div>${extra.img ? `<img alt="" src="${extra.img}">` : '<div class="imgph"></div>'}</div>
+    <div>
+      <span class="call ${cls}">${label}</span>
+      <div class="vname"></div><div class="vsub"></div>
+      <div class="figs">
+        <div><small>CK credit</small><b>${fmt(v.credit)}</b></div>
+        <div><small>CK cash</small><b>${fmt(v.cash)}</b></div>
+        <div><small>TCG market</small><b>${extra.market ? fmt(extra.market) : '—'}</b></div>
+        <div><small>CK sells for</small><b>${fmt(row.retail)}</b></div>
+      </div>
+      <ul class="reasons"></ul>
+      <div class="actions">
+        <div class="qty"><button type="button" id="qMinus" aria-label="One fewer">−</button><input id="qty" aria-label="Quantity" value="${qty}" inputmode="numeric"><button type="button" id="qPlus" aria-label="One more">+</button></div>
+        <button type="button" class="primary" id="doSell" ${v.call === 'KEEP' ? 'disabled' : ''}>Add to sell list <kbd>S</kbd></button>
+        <button type="button" id="doKeep">Keep it <kbd>K</kbd></button>
+      </div>
+    </div></div>`;
+  box.querySelector('.vname').textContent = row.name;
+  box.querySelector('.vsub').textContent = [row.edition, row.variation, row.foil ? 'Foil' : ''].filter(Boolean).join(' · ');
+  const ul = box.querySelector('.reasons');
+  v.reasons.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+  v.flags.forEach(f => { const li = document.createElement('li'); li.className = f.tone; li.textContent = f.text; ul.appendChild(li); });
+  $('qMinus').onclick = () => setQty(current.qty - 1);
+  $('qPlus').onclick = () => setQty(current.qty + 1);
+  $('qty').onchange = e => setQty(parseInt(e.target.value, 10) || 1);
+  $('doSell').onclick = () => act('sell');
+  $('doKeep').onclick = () => act('keep');
+}
+function setQty(n) { current.qty = Math.max(1, n); renderVerdict(); }
+
+function act(kind) {
+  if (!current) return;
+  const { row, v } = current;
+  if (kind === 'sell') {
+    if (v.call === 'KEEP' || v.sellQty < 1) return;
+    const key = row.sku + (row.foil ? '|f' : '') + '|' + row.edition + '|' + row.variation;
+    const existing = sellList.find(x => x.key === key);
+    const cap = row.wants;
+    if (existing) existing.qty = Math.min(cap, existing.qty + v.sellQty);
+    else sellList.push({ key, name: row.name, edition: row.edition, variation: row.variation, foil: row.foil, qty: v.sellQty, credit: v.credit, cash: v.cash });
+    store.set('sell', sellList); renderSell();
+  }
+  log.unshift({ t: kind === 'sell' ? 'SOLD' : 'KEPT', name: row.name, ed: row.edition, foil: row.foil, call: v.call });
+  log = log.slice(0, 40); store.set('log', log); renderLog();
+  reset();
+}
+function reset() { $('q').value = ''; hideSug(); clearPrintings(); $('placeholder').hidden = false; $('q').focus(); }
+
+// ---- sell list ----
+function renderSell() {
+  const ul = $('slist'); ul.innerHTML = '';
+  let credit = 0, cash = 0, n = 0;
+  sellList.forEach((it, i) => {
+    credit += it.credit * it.qty; cash += it.cash * it.qty; n += it.qty;
+    const li = document.createElement('li');
+    li.innerHTML = `<div><div class="nm"></div><div class="meta"></div></div><div class="num">${it.qty} × ${fmt(it.credit)}</div><button type="button" aria-label="Remove">×</button>`;
+    li.querySelector('.nm').textContent = it.name;
+    li.querySelector('.meta').textContent = [it.edition, it.variation, it.foil ? 'Foil' : ''].filter(Boolean).join(' · ');
+    li.querySelector('button').onclick = () => { sellList.splice(i, 1); store.set('sell', sellList); renderSell(); };
+    ul.appendChild(li);
+  });
+  if (!sellList.length) ul.innerHTML = '<li class="vsub" style="display:block;border:0">Cards you mark to sell land here.</li>';
+  $('tCredit').textContent = fmt(credit);
+  $('tCash').textContent = fmt(cash) + ' cash';
+  $('tCount').textContent = n + (n === 1 ? ' card' : ' cards');
+}
+function renderLog() {
+  const ul = $('log'); ul.innerHTML = '';
+  if (!log.length) { ul.innerHTML = '<li class="vsub">Nothing checked yet.</li>'; return; }
+  log.slice(0, 12).forEach(e => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="t" style="color:var(${e.t === 'SOLD' ? '--sell' : '--keep'})">${e.t}</span><span class="x"></span>`;
+    li.querySelector('.x').textContent = `${e.name} · ${e.ed}${e.foil ? ' (foil)' : ''}`;
+    ul.appendChild(li);
+  });
+}
+$('exportCsv').onclick = () => {
+  if (!sellList.length) return;
+  const blob = new Blob([toCkCsv(sellList)], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ck-sell-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$('copyCsv').onclick = async () => {
+  const b = $('copyCsv');
+  try { await navigator.clipboard.writeText(toCkCsv(sellList)); b.textContent = 'Copied'; }
+  catch { b.textContent = 'Copy failed'; }
+  setTimeout(() => b.textContent = 'Copy CSV', 1500);
+};
+$('clearList').onclick = () => { if (sellList.length) $('clearConfirm').hidden = false; };
+$('clearNo').onclick = () => $('clearConfirm').hidden = true;
+$('clearYes').onclick = () => { sellList = []; store.set('sell', sellList); renderSell(); $('clearConfirm').hidden = true; };
+
+// ---- settings ----
+function bindSetting(id, key, toUi, fromUi) {
+  const el = $(id); el.value = toUi(settings[key]);
+  el.onchange = () => { const v = fromUi(parseFloat(el.value)); if (!isNaN(v)) { settings[key] = v; store.set('settings', settings); if (current) renderVerdict(); } };
+}
+bindSetting('sFloor', 'floor', v => v.toFixed(2), v => Math.max(0, v));
+bindSetting('sRatio', 'lowRatio', v => Math.round(v * 100), v => Math.max(0, Math.min(100, v)) / 100);
+bindSetting('sRank', 'stapleRank', v => v, v => Math.max(0, Math.round(v)));
+$('refresh').onclick = () => loadData(true);
+
+renderSell(); renderLog();
+loadData(false);
+</script>
+</body>
+</html>

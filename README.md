@@ -26,6 +26,7 @@ convention does **not** apply here; routes are wired explicitly in
   - `cardkingdom-tool.html` — MTG Card Organizer, "CardKingdom Tool" tab
   - `skull-cards.webp` — footer art on the three organizer tabs
   - `plant-maps.html` — Plant Maps (Back Yard / Front Yard)
+  - `ck-binder-buylist.html` — Binder Buylist (search a binder against CK's buylist)
   - `game.css` — shared styling for both games
   - `game.js` — shared helpers, the name gate, the leaderboard client
   - `states.js` — state names + SVG paths (State Slam only, ~107KB)
@@ -106,10 +107,17 @@ disappears on its own once `plants` is non-empty.
 The back yard data was ported from a Back Border Plant Map artifact; the
 counts were checked against that artifact's own legend (40 plants, 16 kinds).
 
+## Homepage layout
+
+The project grid is split in two: the general projects first, then a
+`<h2 class="divider">` and the Magic tools below it. Cards in the top group
+are `h2`; cards under the divider are `h3`, since they sit a level deeper.
+`.project h2, .project h3` styles both identically.
+
 ## The card organizers
 
-`collection-organizer.html` and `stack-organizer.html` are self-contained
-single-file apps copied in from elsewhere. They have their own look and share
+`collection-organizer.html`, `stack-organizer.html` and `ck-binder-buylist.html`
+are self-contained single-file apps copied in from elsewhere. They have their own look and share
 nothing with the rest of the site — no `game.css`, no `game.js`, no site
 favicon. Leave them that way unless asked.
 
