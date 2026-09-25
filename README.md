@@ -109,10 +109,9 @@ counts were checked against that artifact's own legend (40 plants, 16 kinds).
 
 ## Homepage layout
 
-The project grid is split in two: the general projects first, then a
-`<h2 class="divider">` and the Magic tools below it. Cards in the top group
-are `h2`; cards under the divider are `h3`, since they sit a level deeper.
-`.project h2, .project h3` styles both identically.
+The project grid is split in two: the general projects first, then an
+`<hr class="divider">` and the Magic tools below it. The divider is an unlabelled
+thematic break, so every card title stays an `h2`.
 
 ## The card organizers
 
