@@ -25,6 +25,7 @@
   --shrub:#b34700;
   --shade:#0f6b35;
   --flower:#5a22b0;
+  --grass:#1f6f8b;
   --on:#2d6a47;
   --lite:#b9d6c1;
   --off:#d5dccf;
@@ -127,6 +128,7 @@ h1{font-size:32px;line-height:1.05}
 .plant:has(.big){gap:8px}
 .g-tree{--c:var(--tree)} .g-shrub{--c:var(--shrub)}
 .g-shade{--c:var(--shade)} .g-flower{--c:var(--flower)}
+.g-grass{--c:var(--grass)}
 
 .plant:hover{transform:translate(-50%,-50%) scale(1.12)}
 .plant:focus-visible{outline:none}
@@ -134,6 +136,24 @@ h1{font-size:32px;line-height:1.05}
 .plant.dim{opacity:.18}
 .plant.picked .disc{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink)}
 .plant.due .disc{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--now)}
+
+/* plan view (front yard: the bed is an L, not a row of strips) */
+.planwrap{overflow-x:auto;padding-bottom:4px}
+svg.plan{display:block;width:100%;min-width:620px;height:auto}
+.bed{fill:#eceee6;stroke:var(--rule);stroke-width:1.5}
+.structure{fill:var(--fence);opacity:.65}
+.slabel{font:500 10px/1 "IBM Plex Mono",monospace;letter-spacing:.14em;
+  text-transform:uppercase;fill:var(--faint)}
+.pmark{cursor:pointer;transition:opacity .15s}
+.pmark circle{fill:var(--c);fill-opacity:.5;stroke:var(--c);stroke-width:1.5;transition:fill-opacity .15s}
+.pmark text{font:600 11px/1 "IBM Plex Mono",monospace;fill:var(--ink);text-anchor:middle;
+  dominant-baseline:central;pointer-events:none}
+.pmark:hover circle{fill-opacity:.72}
+.pmark:focus-visible{outline:none}
+.pmark:focus-visible circle{stroke:var(--ink);stroke-width:3}
+.pmark.dim{opacity:.17}
+.pmark.picked circle{stroke:var(--ink);stroke-width:3;fill-opacity:.72}
+.pmark.due circle{stroke:var(--now);stroke-width:3;fill-opacity:.72}
 
 /* legend */
 .legend{display:grid;grid-template-columns:repeat(4,auto);justify-content:space-between;
@@ -264,7 +284,8 @@ const GROUPS = [
   { key:'tree',   label:'Trees' },
   { key:'shrub',  label:'Shrubs' },
   { key:'shade',  label:'Ferns & hostas' },
-  { key:'flower', label:'Flowers & perennials' }
+  { key:'flower', label:'Flowers & perennials' },
+  { key:'grass',  label:'Grasses' }
 ];
 
 const WATER = {
@@ -338,6 +359,27 @@ const SPECIES = {
        prune:['','','','','','on','','','','','',''], when:'June, after blooming',
        how:'Cut spent stalks to the leafy base, or leave a few to self-seed. If leaf-miner trails show up, cut all foliage to the ground — it regrows fresh.',
        drink:'Weekly during dry spells.' },
+  BH:{ name:'Bigleaf hydrangea', latin:'Hydrangea macrophylla', group:'shrub', water:'regular',
+       prune:['','','on','','','','','','','','',''], when:'March, before leaf-out',
+       how:'Blooms on old wood. In March snip only the dead flower heads down to the first fat pair of buds and cut fully dead canes at the base. Never shear it back.',
+       drink:'Thirsty — 1–1.5" a week through summer.' },
+  PH:{ name:'Panicle hydrangea', latin:"Hydrangea paniculata, 'Limelight' type", group:'shrub', water:'regular',
+       prune:['','on','on','','','','','','','','',''], when:'Late Feb–early Mar',
+       how:'Blooms on new wood. Cut every stem back by about a third to just above a pair of buds and thin the weakest at the base. Leave the dried heads on through winter.',
+       drink:'Deep weekly soak — far more forgiving than the bigleaf.' },
+  LE:{ name:'Leucothoe', latin:'Leucothoe axillaris', group:'shrub', water:'regular',
+       prune:['','','','','on','','','','','','',''], when:'May, after bloom',
+       how:'Minimal. After it flowers, cut one or two of the oldest stems to the ground to keep it fresh.',
+       drink:'Steady moisture — never let it go bone dry.' },
+  VS:{ name:'Virginia sweetspire', latin:"Itea virginica, likely 'Henry's Garnet'", group:'shrub', water:'regular',
+       prune:['','','','','','on','on','','','','',''], when:'June–July, after bloom',
+       how:'Prune straight after the June bloom: shorten the tall wands crowding the walk and cut a few old stems at the base. It suckers, so dig out runners.',
+       drink:'Likes moisture and tolerates wet soil — weekly soak in summer.' },
+  FG:{ name:'Blue fescue', latin:'Festuca glauca', group:'grass', water:'low',
+       prune:['','','on','','','','lite','','','','',''], when:'Mar; clip seed stalks in summer',
+       how:'In early March comb the dead blades out with your fingers, or shear to 3–4". Divide every 2–3 years: dig it up, discard the dead centre, replant the healthy outer pieces.',
+       drink:'Drought-tolerant, and it rots in soggy soil — keep water off the crown.' },
+
   BF:{ name:'Blanket flower', latin:'Gaillardia', group:'flower', water:'low',
        prune:['','','','','','lite','lite','on','lite','','',''], when:'Aug; deadhead Jun–Sep',
        how:'Deadhead all summer, then cut back to about 6" in late summer so it lives longer. Leave the foliage on over winter.',
@@ -348,6 +390,7 @@ const COLS = 'BCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 const YARDS = {
   back: {
+    layout:'rows',
     label:'Back Yard', place:'Hillsboro, OR', mapped:'September 2026',
     note:'Row 1 runs along the fence; row 4 is the lawn edge. Bigger rings are trees.',
     edgeTop:'Fence', edgeBottom:'Lawn',
@@ -378,9 +421,29 @@ const YARDS = {
   },
 
   front: {
-    label:'Front Yard', place:'Hillsboro, OR', mapped:null,
-    note:'', edgeTop:'Street', edgeBottom:'House',
-    rows:[], plants:[]
+    layout:'plan',
+    label:'Front Yard', place:'Hillsboro, OR', mapped:'October 2026',
+    note:'Outline traced from the aerial photo; positions and spreads are eyeballed, not surveyed.',
+    // The bed runs along the house, then turns and comes down at the right.
+    bed:'M 46,98 C 240,76 460,52 700,46 Q 842,42 842,110 L 842,396 '
+      + 'Q 842,440 790,440 L 672,440 Q 622,440 606,392 Q 574,306 486,280 '
+      + 'Q 350,240 170,216 Q 70,202 52,186 Q 46,170 46,98 Z',
+    structures:[ {x:46,y:20,w:654,h:13} ],
+    labels:[ {x:52,y:14,t:'House'}, {x:150,y:300,t:'Lawn'} ],
+    plants:[
+      {c:'LI', label:'LI',  x:140, y:136, rad:46},
+      {c:'HO', label:'HO1', x:206, y:180, rad:22},
+      {c:'BH', label:'BH2', x:262, y:118, rad:24},
+      {c:'BH', label:'BH1', x:344, y:148, rad:38},
+      {c:'HO', label:'HO2', x:444, y:182, rad:30},
+      {c:'PH', label:'PH',  x:556, y:142, rad:50},
+      {c:'HO', label:'HO3', x:640, y:224, rad:22},
+      {c:'LE', label:'LE',  x:704, y:140, rad:24},
+      {c:'VS', label:'VS',  x:762, y:240, rad:36},
+      {c:'FG', label:'FG1', x:678, y:324, rad:20},
+      {c:'HO', label:'HO4', x:776, y:340, rad:22},
+      {c:'FG', label:'FG2', x:722, y:400, rad:18}
+    ]
   }
 };
 
@@ -403,10 +466,67 @@ const countsFor = yard => {
   return m;
 };
 
+const MARK = '.plant, .pmark';
+
 /* ── state ────────────────────────────────────────────────────────────────── */
 let currentYard = 'back';
 let pickedSpecies = null;   // species code, or null
 let pruneMonth = null;      // 0–11, or null
+
+/* ── map markup, one per layout ───────────────────────────────────────────── */
+function mapMarkup(yard){
+  return yard.layout === 'plan' ? planMarkup(yard) : rowsMarkup(yard);
+}
+
+function rowsMarkup(yard){
+  return `
+    <div class="mapwrap">
+      <div class="fence"></div>
+      <div class="map">
+        <div class="colrow"><div></div>${COLS.map(c => `<div class="colhead">${c}</div>`).join('')}</div>
+        ${yard.rows.map(row => `
+          <div class="mrow">
+            <div class="rowhead"><b>${row.n}</b><span>${esc(row.label)}</span></div>
+            <div class="track">
+              ${COLS.map((_,i) => `<div class="vline" style="left:${((i+1)*4).toFixed(3)}%"></div>`).join('')}
+              ${yard.plants.filter(p => p.r === row.n).map(p => {
+                const s = SPECIES[p.c];
+                return `<button type="button" class="plant" data-code="${p.c}" data-cell="${p.cell}"
+                          style="left:${p.x}%" title="${esc(s.name)} · ${p.cell}">
+                          <span class="disc g-${s.group}${p.big ? ' big' : ''}">${p.c}</span>
+                          <i>${p.cell}</i>
+                        </button>`;
+              }).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="lawn">${esc(yard.edgeBottom)}</div>
+    </div>`;
+}
+
+/* An overhead plan, for beds that aren't a straight run of rows. */
+function planMarkup(yard){
+  return `
+    <div class="planwrap">
+      <svg class="plan" viewBox="0 0 880 470" role="img"
+           aria-label="Overhead plan of the ${esc(yard.label)} bed">
+        <path class="bed" d="${yard.bed}"/>
+        ${(yard.structures || []).map(r =>
+          `<rect class="structure" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="2"/>`).join('')}
+        ${(yard.labels || []).map(l =>
+          `<text class="slabel" x="${l.x}" y="${l.y}">${esc(l.t)}</text>`).join('')}
+        ${yard.plants.map(p => {
+          const s = SPECIES[p.c];
+          return `<g class="pmark g-${s.group}" data-code="${p.c}" data-cell="${esc(p.label)}"
+                     tabindex="0" role="button" aria-label="${esc(s.name)} ${esc(p.label)}">
+                    <title>${esc(s.name)} · ${esc(p.label)}</title>
+                    <circle cx="${p.x}" cy="${p.y}" r="${p.rad}"/>
+                    <text x="${p.x}" y="${p.y}">${esc(p.label)}</text>
+                  </g>`;
+        }).join('')}
+      </svg>
+    </div>`;
+}
 
 /* ── render ───────────────────────────────────────────────────────────────── */
 function render(){
@@ -441,28 +561,7 @@ function render(){
     </div>
     <p class="status" id="status"></p>
 
-    <div class="mapwrap">
-      <div class="fence"></div>
-      <div class="map">
-        <div class="colrow"><div></div>${COLS.map(c => `<div class="colhead">${c}</div>`).join('')}</div>
-        ${yard.rows.map(row => `
-          <div class="mrow">
-            <div class="rowhead"><b>${row.n}</b><span>${esc(row.label)}</span></div>
-            <div class="track">
-              ${COLS.map((_,i) => `<div class="vline" style="left:${((i+1)*4).toFixed(3)}%"></div>`).join('')}
-              ${yard.plants.filter(p => p.r === row.n).map(p => {
-                const s = SPECIES[p.c];
-                return `<button type="button" class="plant" data-code="${p.c}" data-cell="${p.cell}"
-                          style="left:${p.x}%" title="${esc(s.name)} · ${p.cell}">
-                          <span class="disc g-${s.group}${p.big ? ' big' : ''}">${p.c}</span>
-                          <i>${p.cell}</i>
-                        </button>`;
-              }).join('')}
-            </div>
-          </div>`).join('')}
-      </div>
-      <div class="lawn">${esc(yard.edgeBottom)}</div>
-    </div>
+    ${mapMarkup(yard)}
 
     <div class="legend">
       ${GROUPS.map(g => {
@@ -530,11 +629,18 @@ function render(){
 
 /* ── interaction ──────────────────────────────────────────────────────────── */
 function wire(){
-  document.querySelectorAll('.plant').forEach(el => {
-    el.addEventListener('click', () => {
+  document.querySelectorAll(MARK).forEach(el => {
+    const pick = () => {
       pickedSpecies = (pickedSpecies === el.dataset.code) ? null : el.dataset.code;
       applyState();
-    });
+    };
+    el.addEventListener('click', pick);
+    // plan markers are <g tabindex>, not buttons, so they need their own keys
+    if (el.classList.contains('pmark')) {
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
+      });
+    }
   });
   document.querySelectorAll('[data-species]').forEach(el => {
     if (el.tagName !== 'BUTTON') return;
@@ -571,7 +677,7 @@ function applyState(){
     el.setAttribute('aria-pressed', String(el.dataset.species === pickedSpecies)));
 
   // map markers
-  document.querySelectorAll('.plant').forEach(el => {
+  document.querySelectorAll(MARK).forEach(el => {
     const code = el.dataset.code;
     const due = dueThisMonth(code);
     const picked = pickedSpecies === code;
@@ -600,13 +706,14 @@ function renderStatus(){
   if (!el) return;
   const bits = [];
   if (pruneMonth != null) {
-    const n = document.querySelectorAll('.plant.due').length;
+    const n = document.querySelectorAll('.plant.due, .pmark.due').length;
     bits.push(n
       ? `<b>${n}</b> plant${n === 1 ? '' : 's'} to prune in <b>${MONTH_NAMES[pruneMonth]}</b>`
       : `Nothing to prune in <b>${MONTH_NAMES[pruneMonth]}</b>`);
   }
   if (pickedSpecies) {
-    const n = document.querySelectorAll(`.plant[data-code="${pickedSpecies}"]`).length;
+    const n = document.querySelectorAll(
+      `.plant[data-code="${pickedSpecies}"], .pmark[data-code="${pickedSpecies}"]`).length;
     bits.push(`<b>${n}</b> × ${esc(SPECIES[pickedSpecies].name)} highlighted`);
   }
   el.innerHTML = bits.join(' &nbsp;·&nbsp; ');
@@ -622,7 +729,7 @@ function renderDetail(){
   }
   const s = SPECIES[pickedSpecies];
   const cells = YARDS[currentYard].plants
-    .filter(p => p.c === pickedSpecies).map(p => p.cell).join(', ');
+    .filter(p => p.c === pickedSpecies).map(p => p.label || p.cell).join(', ');
   box.className = 'detail';
   box.innerHTML = `
     <span class="disc g-${s.group}">${pickedSpecies}</span>

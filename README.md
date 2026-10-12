@@ -91,6 +91,18 @@ name shaping, bad input, and the unconfigured case. No network, no deploy.
 and Front Yard — not separate files, because both yards are the same UI over
 different data.
 
+Each yard declares a `layout`:
+
+- `'rows'` (back yard) — a straight border, drawn as rows across a 25-column grid;
+  plants are `{c, r, x, cell}` with `x` a percentage across the row.
+- `'plan'` (front yard) — an overhead plan, because that bed is an L that turns
+  and runs down at the right, which rows can't express. The yard carries a `bed`
+  SVG path plus optional `structures` and `labels`, and plants are
+  `{c, label, x, y, rad}` in the 880×470 viewBox.
+
+Both render into the same legend, month filter, detail panel and care table;
+markers are `.plant` (rows) or `.pmark` (plan), and `MARK` selects either.
+
 Everything lives in two structures near the top of its script:
 
 - `SPECIES` — one entry per plant kind: name, latin, group, water level, a
@@ -99,13 +111,13 @@ Everything lives in two structures near the top of its script:
 - `YARDS` — per yard: rows, and a `plants` array of `{c, r, x, cell, big}`
   where `x` is the percentage across the row.
 
-**To add the front yard**, fill in `YARDS.front.rows` and `YARDS.front.plants`
-in that shape. Every species is already in `SPECIES`, the counts, legend,
-month filter and care table all derive from the data, and the empty state
-disappears on its own once `plants` is non-empty.
+The back yard came from a Back Border Plant Map artifact (40 plants, 16 kinds)
+and the front yard from a Front Yard Bed Plan artifact (12 plants, 7 kinds);
+both were checked against those artifacts' own legends. The front bed outline
+was traced by eye from an aerial photo, so it is approximate — the shape is one
+`bed` path string and is easy to adjust.
 
-The back yard data was ported from a Back Border Plant Map artifact; the
-counts were checked against that artifact's own legend (40 plants, 16 kinds).
+Lilac and Hosta appear in both yards and share a single `SPECIES` entry.
 
 ## Homepage layout
 
