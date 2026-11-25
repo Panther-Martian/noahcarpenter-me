@@ -11,127 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Lilita+One&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#F2F4F6;
-  --dots:#E1E6EB;
-  --ink:#28313B;
-  --muted:#6B7A88;
-  --card:#FFFFFF;
-  --accent:#A8752F;
-  --line:#28313B;
-  --sticker:transparent;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#1A2027;
-    --dots:#232C35;
-    --ink:#E8EDF2;
-    --muted:#93A3B2;
-    --card:#232C35;
-    --accent:#D9A85C;
-    --line:#3A4854;
-    --sticker:#E8EDF2;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#1A2027;
-  --dots:#232C35;
-  --ink:#E8EDF2;
-  --muted:#93A3B2;
-  --card:#232C35;
-  --accent:#D9A85C;
-  --line:#3A4854;
-  --sticker:#E8EDF2;
-}
-
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  color:var(--ink);
-  font-family:"Fredoka","Trebuchet MS",sans-serif;
-  background-color:var(--bg);
-  background-image:radial-gradient(var(--dots) 1.5px, transparent 1.6px);
-  background-size:22px 22px;
-  min-height:100vh;
-  line-height:1.6;
-}
-
-.wrap{max-width:720px;margin:0 auto;padding:72px 16px 96px}
-
-header{margin-bottom:44px;text-align:center}
-
-h1{
-  font-family:"Lilita One","Impact",sans-serif;
-  font-weight:400;
-  margin:0 0 32px;
-  line-height:1.05;
-  text-align:center;
-  letter-spacing:.04em;
-  text-transform:uppercase;
-  font-size:clamp(2.2rem,8vw,3.4rem);
-  color:var(--accent);
-}
-
-.avatar{
-  display:block;
-  margin:0 auto 18px;
-  width:clamp(175px,48vw,200px);
-  height:auto;
-  /* die-cut outline so the black cap stays readable on the dark ground */
-  filter:
-    drop-shadow(1.5px 0 0 var(--sticker))
-    drop-shadow(-1.5px 0 0 var(--sticker))
-    drop-shadow(0 1.5px 0 var(--sticker))
-    drop-shadow(0 -1.5px 0 var(--sticker));
-}
-
-.projects{display:grid;gap:14px;margin:0;padding:0;list-style:none;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-
-.divider{
-  border:0;
-  height:2px;
-  margin:40px 0 20px;
-  background:var(--line);
-  opacity:.45;
-}
-
-.project{
-  display:block;
-  background:var(--card);
-  border:2px solid var(--line);
-  border-radius:14px;
-  box-shadow:4px 4px 0 var(--line);
-  padding:18px 20px;
-  text-decoration:none;
-  color:inherit;
-  transition:transform .12s ease, box-shadow .12s ease;
-}
-.project:hover,
-.project:focus-visible{
-  transform:translate(-2px,-2px);
-  box-shadow:6px 6px 0 var(--accent);
-  outline:none;
-}
-.project h2{
-  margin:0;
-  font-family:"Lilita One","Impact",sans-serif;
-  font-weight:400;
-  font-size:1.15rem;
-  /* Bungee was caps-only, so these read as caps with no rule; Lilita One has
-     real lowercase, so the casing has to be asked for. */
-  text-transform:uppercase;
-  letter-spacing:.02em;
-}
-.project p{margin:6px 0 0;color:var(--muted);font-size:.95rem}
-
-@media (max-width:520px){
-  .wrap{padding:48px 16px 72px}
-  header{margin-bottom:40px}
-}
-</style>
+<link rel="stylesheet" href="site.css">
 </head>
 <body>
 <div class="wrap">
@@ -142,40 +22,31 @@ h1{
   </header>
 
   <main>
-    <h1>Projects</h1>
+    <h1>Noah</h1>
     <ul class="projects">
       <li>
-        <a class="project" href="map-slam.html">
-          <h2>State Slam</h2>
-          <p>Tap each state on the map and name it. Submit all 50 and see your score. Time breaks ties.</p>
-        </a>
-      </li>
-      <li>
-        <a class="project" href="list-race.html">
-          <h2>State Race</h2>
-          <p>Type all 50 from memory. Any mistake and you're a dumb dumb. Fastest clean list wins.</p>
-        </a>
-      </li>
-      <li>
         <a class="project" href="plant-maps.html">
-          <h2>Plant Maps</h2>
-          <p>What's planted where in the yard, when each thing needs pruning, and how much to water it.</p>
+          <h3>Plant Maps</h3>
+        </a>
+      </li>
+      <li>
+        <a class="project" href="ranking-game.html">
+          <h3>Ranking Game</h3>
         </a>
       </li>
     </ul>
 
     <hr class="divider">
-    <ul class="projects">
+
+    <ul class="menus">
       <li>
-        <a class="project" href="collection-organizer.html">
-          <h2>MTG Card Organizer</h2>
-          <p>Drop in a ManaBox export for Scryfall prices and EDHREC ranks, merge several lists into one, or see what Card Kingdom will pay for the lot.</p>
+        <a class="menu" href="projects.html">
+          <h2>Projects</h2>
         </a>
       </li>
       <li>
-        <a class="project" href="ck-binder-buylist.html">
-          <h2>Binder Buylist</h2>
-          <p>Flip through a binder, search each card, and build a sell list against Card Kingdom's buylist as you go.</p>
+        <a class="menu" href="games.html">
+          <h2>Games</h2>
         </a>
       </li>
     </ul>

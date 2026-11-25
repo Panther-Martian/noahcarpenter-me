@@ -15,8 +15,11 @@ convention does **not** apply here; routes are wired explicitly in
 - `worker.js` — entry point; routes `/api/scores`, serves everything else from `public/`
 - `src/scores.js` — leaderboard API handlers
 - `public/` — everything served as static files:
-  - `index.html` — homepage
-  - `404.html` — not-found page
+  - `index.html` — homepage: the current stuff, then buttons to the two menus
+  - `projects.html` — Projects menu (the MTG tools)
+  - `games.html` — Games menu (State Slam, State Race)
+  - `site.css` — shared styling for the homepage and the two menu pages
+  - `404.html` — not-found page (self-contained, own styles)
   - `skull.webp` — header artwork
   - `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png` — site icons
   - `map-slam.html` — State Slam (tap each state, name it)
@@ -26,6 +29,7 @@ convention does **not** apply here; routes are wired explicitly in
   - `cardkingdom-tool.html` — MTG Card Organizer, "CardKingdom Tool" tab
   - `skull-cards.webp` — footer art on the three organizer tabs
   - `plant-maps.html` — Plant Maps (Back Yard / Front Yard)
+  - `ranking-game.html` — Ranking Game (rank four drawn terms, lock, clear)
   - `ck-binder-buylist.html` — Binder Buylist (search a binder against CK's buylist)
   - `game.css` — shared styling for both games
   - `game.js` — shared helpers, the name gate, the leaderboard client
@@ -174,13 +178,14 @@ script downloaded.
 ## Adding a project
 
 1. Drop the project's HTML file in `public/` (or a folder under it with its own `index.html`).
-2. Add a card to the `<ul class="projects">` grid in `public/index.html`:
+2. Add a card to a `<ul class="projects">` grid. The grid on `index.html` (above
+   the divider) is the current stuff; everything else lives on `projects.html`
+   or `games.html`, which the two buttons under the divider link to:
 
 ```html
 <li>
   <a class="project" href="your-project.html">
-    <h2>Project Name</h2>
-    <p>One line about what it does.</p>
+    <h3>Project Name</h3>
   </a>
 </li>
 ```
@@ -188,7 +193,9 @@ script downloaded.
 3. Commit and push. Cloudflare Pages deploys automatically.
 
 The grid is `repeat(auto-fit, minmax(240px, 1fr))`, so cards reflow from one
-column on a phone to two or three as you add them.
+column on a phone to two or three as you add them. A new menu page is a copy
+of `games.html` with its own cards, plus a button in `<ul class="menus">` on
+the homepage.
 
 ## Local preview
 

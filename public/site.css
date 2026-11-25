@@ -1,0 +1,184 @@
+/* Shared chrome for the homepage and the two menu pages (projects, games).
+   The individual project pages bring their own styling. */
+
+:root{
+  --bg:#F2F4F6;
+  --dots:#E1E6EB;
+  --ink:#28313B;
+  --muted:#6B7A88;
+  --card:#FFFFFF;
+  --accent:#A8752F;
+  --line:#28313B;
+  --sticker:transparent;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1A2027;
+    --dots:#232C35;
+    --ink:#E8EDF2;
+    --muted:#93A3B2;
+    --card:#232C35;
+    --accent:#D9A85C;
+    --line:#3A4854;
+    --sticker:#E8EDF2;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1A2027;
+  --dots:#232C35;
+  --ink:#E8EDF2;
+  --muted:#93A3B2;
+  --card:#232C35;
+  --accent:#D9A85C;
+  --line:#3A4854;
+  --sticker:#E8EDF2;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"Fredoka","Trebuchet MS",sans-serif;
+  background-color:var(--bg);
+  background-image:radial-gradient(var(--dots) 1.5px, transparent 1.6px);
+  background-size:22px 22px;
+  min-height:100vh;
+  line-height:1.6;
+}
+
+.wrap{max-width:720px;margin:0 auto;padding:72px 16px 96px}
+
+header{margin-bottom:44px;text-align:center}
+
+h1{
+  font-family:"Lilita One","Impact",sans-serif;
+  font-weight:400;
+  margin:0 0 32px;
+  line-height:1.05;
+  text-align:center;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  font-size:clamp(2.2rem,8vw,3.4rem);
+  color:var(--accent);
+}
+
+.avatar{
+  display:block;
+  margin:0 auto 18px;
+  width:clamp(175px,48vw,200px);
+  height:auto;
+  /* die-cut outline so the black cap stays readable on the dark ground */
+  filter:
+    drop-shadow(1.5px 0 0 var(--sticker))
+    drop-shadow(-1.5px 0 0 var(--sticker))
+    drop-shadow(0 1.5px 0 var(--sticker))
+    drop-shadow(0 -1.5px 0 var(--sticker));
+}
+
+.projects{display:grid;gap:14px;margin:0;padding:0;list-style:none;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+
+.divider{
+  border:0;
+  height:2px;
+  margin:40px 0 20px;
+  background:var(--line);
+  opacity:.45;
+}
+
+.project{
+  display:block;
+  background:var(--card);
+  border:2px solid var(--line);
+  border-radius:14px;
+  box-shadow:4px 4px 0 var(--line);
+  padding:18px 20px;
+  text-align:center;
+  text-decoration:none;
+  color:inherit;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.project:hover,
+.project:focus-visible{
+  transform:translate(-2px,-2px);
+  box-shadow:6px 6px 0 var(--accent);
+  outline:none;
+}
+.project h3{
+  margin:0;
+  font-family:"Lilita One","Impact",sans-serif;
+  font-weight:400;
+  font-size:1.15rem;
+  /* Bungee was caps-only, so these read as caps with no rule; Lilita One has
+     real lowercase, so the casing has to be asked for. */
+  text-transform:uppercase;
+  letter-spacing:.02em;
+}
+
+/* ---------- Menu buttons (homepage) ---------- */
+
+.menus{display:grid;gap:14px;margin:0;padding:0;list-style:none;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.menu{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  min-height:86px;
+  background:var(--card);
+  border:3px solid var(--line);
+  border-radius:16px;
+  box-shadow:5px 5px 0 var(--line);
+  padding:20px;
+  text-align:center;
+  text-decoration:none;
+  color:inherit;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.menu:hover,
+.menu:focus-visible{
+  transform:translate(-2px,-2px);
+  box-shadow:7px 7px 0 var(--accent);
+  outline:none;
+}
+.menu h2{
+  margin:0;
+  font-family:"Lilita One","Impact",sans-serif;
+  font-weight:400;
+  font-size:1.6rem;
+  line-height:1.1;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  color:var(--accent);
+}
+
+/* ---------- Back link (menu pages) ---------- */
+
+.back{
+  display:inline-block;
+  margin-bottom:26px;
+  font-weight:600;
+  font-size:.95rem;
+  text-decoration:none;
+  color:inherit;
+  background:var(--card);
+  border:2px solid var(--line);
+  border-radius:12px;
+  box-shadow:3px 3px 0 var(--line);
+  padding:7px 14px;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.back:hover,
+.back:focus-visible{
+  transform:translate(-2px,-2px);
+  box-shadow:5px 5px 0 var(--accent);
+  outline:none;
+}
+
+@media (max-width:520px){
+  .wrap{padding:48px 16px 72px}
+  header{margin-bottom:40px}
+}
