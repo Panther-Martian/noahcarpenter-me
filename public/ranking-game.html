@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ranking Game</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="Rank four drawn terms 1 through 4, lock the answer in, then clear it for the next player.">
+<meta name="theme-color" content="#FFD23F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="game.css">
+<style>
+/* Phone-first: this gets used standing in a circle, one hand, so everything
+   stays in one narrow column with thumb-sized targets. */
+main{max-width:520px;padding-bottom:40px}
+
+ol.slots,ol.final{list-style:none;margin:18px 0 0;padding:14px;background:var(--card);
+  border:4px solid #2B1B5A;border-radius:22px;box-shadow:8px 8px 0 var(--pink)}
+ol.slots li,ol.final li{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+ol.slots li:last-child,ol.final li:last-child{margin-bottom:0}
+
+.num{flex:none;width:2.4em;height:2.4em;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);border:3px solid #2B1B5A;font-family:"Bungee",sans-serif;font-weight:400;
+  font-size:1rem;line-height:1;color:var(--ink)}
+
+ol.slots input{flex:1;min-width:0;font:inherit;font-weight:600;font-size:1.15rem;padding:12px 14px;
+  border:3px solid #2B1B5A;border-radius:14px;background:#fff;color:#2B1B5A}
+ol.slots input::placeholder{color:#9A8FC0;font-weight:500}
+ol.slots input:focus{outline:3px solid var(--pink);outline-offset:1px}
+
+/* Locked card: meant to be held up for the table to read. */
+ol.final li{align-items:flex-start;gap:12px}
+ol.final .num{background:var(--pink);color:#fff;border-color:#2B1B5A;margin-top:2px}
+ol.final .term{flex:1;min-width:0;font-weight:600;font-size:1.3rem;line-height:1.25;
+  overflow-wrap:anywhere;padding-top:4px}
+
+.lockedtag{display:inline-flex;align-items:center;gap:8px;margin:18px 0 0;
+  font-family:"Bungee",sans-serif;font-weight:400;font-size:.95rem;letter-spacing:.04em;
+  /* fixed navy/amber: var(--bg) goes dark in dark mode and vanishes here */
+  background:#2B1B5A;color:#FFD23F;border-radius:12px;padding:8px 14px}
+
+#lock{flex:1}
+#clearOut{flex:1;background:var(--pink);color:#fff;font-size:1.1rem}
+.row{margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <a class="back" href="/">&larr; All projects</a>
+  </div>
+
+  <h1>Ranking Game</h1>
+  <form id="entry" autocomplete="off">
+    <ol class="slots">
+      <li><span class="num">1</span><input id="s1" type="text" placeholder="Best of the four" aria-label="Rank 1" enterkeyhint="next" autocomplete="off" autocapitalize="sentences" spellcheck="false"></li>
+      <li><span class="num">2</span><input id="s2" type="text" placeholder="Second" aria-label="Rank 2" enterkeyhint="next" autocomplete="off" autocapitalize="sentences" spellcheck="false"></li>
+      <li><span class="num">3</span><input id="s3" type="text" placeholder="Third" aria-label="Rank 3" enterkeyhint="next" autocomplete="off" autocapitalize="sentences" spellcheck="false"></li>
+      <li><span class="num">4</span><input id="s4" type="text" placeholder="Worst of the four" aria-label="Rank 4" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" spellcheck="false"></li>
+    </ol>
+    <div class="row">
+      <button class="submit" id="lock" type="submit" disabled>Lock it in</button>
+      <button id="clearIn" type="button" disabled>Clear</button>
+    </div>
+    <p class="hint" id="hint">Fill all four to lock.</p>
+  </form>
+
+  <section id="locked" hidden aria-live="polite">
+    <p class="lockedtag">&#128274; Locked in</p>
+    <ol class="final" id="finalList"></ol>
+    <div class="row">
+      <button id="clearOut" type="button">Clear for next player</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const KEY = "ranking-game:locked";
+const form = document.getElementById("entry");
+const lockedView = document.getElementById("locked");
+const finalList = document.getElementById("finalList");
+const lockBtn = document.getElementById("lock");
+const clearIn = document.getElementById("clearIn");
+const hint = document.getElementById("hint");
+const inputs = [1,2,3,4].map(n => document.getElementById("s" + n));
+
+const values = () => inputs.map(i => i.value.trim());
+
+function syncButtons(){
+  const v = values();
+  lockBtn.disabled = v.some(x => !x);
+  clearIn.disabled = v.every(x => !x);
+  hint.textContent = lockBtn.disabled ? "Fill all four to lock." : "Ready — lock it in.";
+}
+
+inputs.forEach((inp, i) => {
+  inp.addEventListener("input", syncButtons);
+  inp.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (i < 3) inputs[i+1].focus();
+    else if (!lockBtn.disabled) lockIn(values());
+  });
+});
+
+function lockIn(ranked){
+  finalList.innerHTML = "";
+  ranked.forEach((term, i) => {
+    const li = document.createElement("li");
+    const num = document.createElement("span");
+    num.className = "num";
+    num.textContent = i + 1;
+    const span = document.createElement("span");
+    span.className = "term";
+    span.textContent = term;
+    li.append(num, span);
+    finalList.appendChild(li);
+  });
+  form.hidden = true;
+  lockedView.hidden = false;
+  window.scrollTo({top:0});
+  // Survive an accidental refresh or the screen locking mid-round.
+  try { localStorage.setItem(KEY, JSON.stringify(ranked)); } catch {}
+}
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  if (!lockBtn.disabled) lockIn(values());
+});
+
+function reset(){
+  inputs.forEach(i => i.value = "");
+  syncButtons();
+  lockedView.hidden = true;
+  form.hidden = false;
+  window.scrollTo({top:0});
+  try { localStorage.removeItem(KEY); } catch {}
+  inputs[0].focus();
+}
+
+clearIn.onclick = () => { inputs.forEach(i => i.value = ""); syncButtons(); inputs[0].focus(); };
+document.getElementById("clearOut").onclick = reset;
+
+// Restore a locked round if the page was reloaded while it was up.
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (Array.isArray(saved) && saved.length === 4 && saved.every(x => typeof x === "string")) {
+    inputs.forEach((inp, i) => inp.value = saved[i]);
+    lockIn(saved);
+  }
+} catch {}
+syncButtons();
+</script>
+</body>
+</html>
